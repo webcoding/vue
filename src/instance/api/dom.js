@@ -165,6 +165,7 @@ export default function (Vue) {
 
   /**
    * Check for selectors
+   * 查询节点
    *
    * @param {String|Element} el
    */

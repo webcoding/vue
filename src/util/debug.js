@@ -4,6 +4,9 @@ import { hyphenate } from './lang'
 let warn
 let formatComponentName
 
+/**
+ * 错误提示
+ */
 if (process.env.NODE_ENV !== 'production') {
   const hasConsole = typeof console !== 'undefined'
 

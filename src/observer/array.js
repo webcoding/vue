@@ -5,6 +5,9 @@ export const arrayMethods = Object.create(arrayProto)
 
 /**
  * Intercept mutating methods and emit events
+ *
+ * //重写数组的方法
+ * //让方法可以支持计算
  */
 
 ;[
@@ -18,8 +21,11 @@ export const arrayMethods = Object.create(arrayProto)
 ]
 .forEach(function (method) {
   // cache original method
+  // 缓存原始的方法
   var original = arrayProto[method]
+  // 扩展原型方法
   def(arrayMethods, method, function mutator () {
+    // 数组计算处理
     // avoid leaking arguments:
     // http://jsperf.com/closure-with-arguments
     var i = arguments.length

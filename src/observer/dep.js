@@ -11,6 +11,8 @@ let uid = 0
 
 export default function Dep () {
   this.id = uid++
+
+  // 收集wathcher
   this.subs = []
 }
 
@@ -44,6 +46,7 @@ Dep.prototype.removeSub = function (sub) {
  */
 
 Dep.prototype.depend = function () {
+  // Dep.target 就是 Watcher 的实例
   Dep.target.addDep(this)
 }
 

@@ -69,6 +69,11 @@ export default function Directive (descriptor, vm, el, host, scope, frag) {
 }
 
 /**
+ * 初始化指令
+ * 定义混入的属性
+ * 安装watcher
+ * 调用定义的bind与update
+ *
  * Initialize the directive, mixin definition properties,
  * setup the watcher, call definition bind() and update()
  * if present.
@@ -92,6 +97,7 @@ Directive.prototype._bind = function () {
   if (typeof def === 'function') {
     this.update = def
   } else {
+    // 拷贝指定定义的接口
     extend(this, def)
   }
 
@@ -107,11 +113,16 @@ Directive.prototype._bind = function () {
   if (this.literal) {
     this.update && this.update(descriptor.raw)
   } else if (
+    //如果是表达式
+    //并且有更新函数
+    //并且表达式不是函数
     (this.expression || this.modifiers) &&
     (this.update || this.twoWay) &&
     !this._checkStatement()
   ) {
     // wrapped updater for context
+    // textl类型处理
+    // 给上下文对象包装更新方法
     var dir = this
     if (this.update) {
       this._update = function (val, oldVal) {
@@ -213,6 +224,13 @@ Directive.prototype._setupParamWatcher = function (key, expression) {
 }
 
 /**
+ * 检查指令是否是函数调用
+ * 并且如果表达式是一个可以调用
+ * 如果两者都满足
+ * 将要包装表达式，并且作为事件处理句柄
+ *
+ * 例如： on-click="a++"
+ *
  * Check if the directive is a function caller
  * and if the expression is a callable one. If both true,
  * we wrap up the expression and use it as the event
@@ -229,8 +247,11 @@ Directive.prototype._checkStatement = function () {
     expression && this.acceptStatement &&
     !isSimplePath(expression)
   ) {
+    // 生成求值方法
     var fn = parseExpression(expression).get
     var scope = this._scope || this.vm
+
+    // 事件回调
     var handler = function (e) {
       scope.$event = e
       fn.call(scope, scope)
@@ -239,6 +260,8 @@ Directive.prototype._checkStatement = function () {
     if (this.filters) {
       handler = scope._applyFilters(handler, null, this.filters)
     }
+
+    // 绑定事件
     this.update(handler)
     return true
   }

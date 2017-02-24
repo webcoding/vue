@@ -322,6 +322,7 @@ function getPropDefaultValue (vm, prop) {
 
 /**
  * Assert whether a prop is valid.
+ * 断言 prop 是否有效。
  *
  * @param {Object} prop
  * @param {*} value

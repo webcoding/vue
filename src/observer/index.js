@@ -8,6 +8,7 @@ import {
   hasOwn
 } from '../util/index'
 
+// arrayKeys 是什么，应该就是 push，pop那些数组原型方法名集合
 const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
 
 /**
@@ -37,15 +38,21 @@ export function withoutConversion (fn) {
  * @constructor
  */
 
+// 给每一个观察的数据组设置观察
 export function Observer (value) {
   this.value = value
   this.dep = new Dep()
+  // 定义一个__ob__（其中的 value引用this）
   def(value, '__ob__', this)
   if (isArray(value)) {
     var augment = hasProto
       ? protoAugment
       : copyAugment
+
+    // 重写数组的方法
     augment(value, arrayMethods, arrayKeys)
+    
+    // 是数组，就每个数据分别观察
     this.observeArray(value)
   } else {
     this.walk(value)
@@ -63,6 +70,7 @@ export function Observer (value) {
  */
 
 Observer.prototype.walk = function (obj) {
+  // 如果obj是多个对象 分开转化
   var keys = Object.keys(obj)
   for (var i = 0, l = keys.length; i < l; i++) {
     this.convert(keys[i], obj[keys[i]])
@@ -75,6 +83,8 @@ Observer.prototype.walk = function (obj) {
  * @param {Array} items
  */
 
+// 如果是数组
+// 分解每一个元素建立观察
 Observer.prototype.observeArray = function (items) {
   for (var i = 0, l = items.length; i < l; i++) {
     observe(items[i])
@@ -203,6 +213,7 @@ export function defineReactive (obj, key, val) {
   var getter = property && property.get
   var setter = property && property.set
 
+  // 继续分解 val，因为 val 可能还是数组或对象结构
   var childOb = observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,

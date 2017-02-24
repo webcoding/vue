@@ -57,6 +57,7 @@ const config = {
    * @type {Array}
    */
 
+  // 组件列表类型
   _assetTypes: [
     'component',
     'directive',

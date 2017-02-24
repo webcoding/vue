@@ -1,3 +1,23 @@
+## 学习文档
+
+- [Vue.js：轻量高效的前端组件化方案](http://www.csdn.net/article/1970-01-01/2825439)
+- [Vue api 中文文档](http://cn.vuejs.org/api/)
+- [Vue源码剖析](https://github.com/JsAaron/vue-analysis)
+- [js-bits](https://github.com/webcoding/js-bits)
+
+## 项目实现
+
+- [vue-spa-demo](https://github.com/lazyhero/vue-spa-demo)
+- [Vue-cnodejs](https://github.com/shinygang/Vue-cnodejs)
+- [awesome-vue](https://github.com/vuejs/awesome-vue)
+- [vue-weui](https://github.com/aidenzou/vue-weui)
+- [vue-sui-demo](https://github.com/eteplus/vue-sui-demo)
+- [vue-chat](https://github.com/Coffcer/vue-chat)
+- [vue-strap](https://github.com/yuche/vue-strap)
+- [jackblog-vue](https://github.com/jackhutu/jackblog-vue)
+- [一组 VueUI](https://github.com/bravf/VueUI)
+
+
 <p align="center"><a href="http://vuejs.org" target="_blank"><img width="100"src="http://vuejs.org/images/logo.png"></a></p>
 
 <p align="center">

@@ -28,6 +28,7 @@ import { commonTagRE, reservedTagRE } from './component'
 var strats = config.optionMergeStrategies = Object.create(null)
 
 /**
+ * 助手递归合并两个数据对象在一起
  * Helper that recursively merges two data objects together.
  */
 
@@ -142,6 +143,8 @@ strats.activate = function (parentVal, childVal) {
 
 /**
  * Assets
+ * 当存在一个vm(实例创建), 我们需要做的
+ * 构造函数之间的三方合并选项, 实例
  *
  * When a vm is present (instance creation), we need to do
  * a three-way merge between constructor options, instance
@@ -201,6 +204,7 @@ strats.computed = function (parentVal, childVal) {
 }
 
 /**
+ * 默认策略
  * Default strategy.
  */
 
@@ -313,6 +317,7 @@ function guardArrayAssets (assets) {
 }
 
 /**
+ * 合并 将两个选项对象合并为一个新的
  * Merge two option objects into a new one.
  * Core utility used in both instantiation and inheritance.
  *
@@ -346,9 +351,13 @@ export function mergeOptions (parent, child, vm) {
       parent = mergeOptions(parent, mixinOptions, vm)
     }
   }
+
   for (key in parent) {
     mergeField(key)
   }
+
+  // options参数处理
+  // 返回一个link
   for (key in child) {
     if (!hasOwn(parent, key)) {
       mergeField(key)
@@ -356,6 +365,7 @@ export function mergeOptions (parent, child, vm) {
   }
   function mergeField (key) {
     var strat = strats[key] || defaultStrat
+    // object.create 继承 parent=>child
     options[key] = strat(parent[key], child[key], vm, key)
   }
   return options

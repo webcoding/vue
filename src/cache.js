@@ -7,7 +7,8 @@
  *
  *   https://github.com/rsms/js-lru
  *
- * @param {Number} limit
+ * @desc 最近最少使用原则
+ * @param {Number} limit [限定缓存数据的大小]
  * @constructor
  */
 
@@ -34,14 +35,17 @@ var p = Cache.prototype
 p.put = function (key, value) {
   var removed
 
+  // 查询是否已经存在
   var entry = this.get(key, true)
   if (!entry) {
+    // 如果溢出最大限定，返回清除的数据项，否则返回 undefined
     if (this.size === this.limit) {
       removed = this.shift()
     }
     entry = {
       key: key
     }
+    // 保存
     this._keymap[key] = entry
     if (this.tail) {
       this.tail.newer = entry
@@ -52,6 +56,7 @@ p.put = function (key, value) {
     this.tail = entry
     this.size++
   }
+  // 无论数据是否已缓存，都更新 value
   entry.value = value
 
   return removed
@@ -64,6 +69,7 @@ p.put = function (key, value) {
  */
 
 p.shift = function () {
+  // 从缓存中清除第一个数据，返回该数据
   var entry = this.head
   if (entry) {
     this.head = this.head.newer
@@ -85,6 +91,7 @@ p.shift = function () {
  */
 
 p.get = function (key, returnEntry) {
+  // 获取缓存中的数据，returnEntry为 true 时，查看是否存在 this._keymap[key]
   var entry = this._keymap[key]
   if (entry === undefined) return
   if (entry === this.tail) {
@@ -96,6 +103,7 @@ p.get = function (key, returnEntry) {
   //   <.older   .newer>
   //  <--- add direction --
   //   A  B  C  <D>  E
+  // 当前数据结构如上，现更新数据 D，操作流程如下
   if (entry.newer) {
     if (entry === this.head) {
       this.head = entry.newer

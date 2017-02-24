@@ -204,6 +204,7 @@ function teardownDirs (vm, dirs, destroying) {
 export function compileAndLinkProps (vm, el, props, scope) {
   var propsLinkFn = compileProps(el, props, vm)
   var propDirs = linkAndCapture(function () {
+    // props 数据处理，类型检查，增加数据监听，返回新增指令集 dirs？
     propsLinkFn(vm, scope)
   }, vm)
   return makeUnlinkFn(vm, propDirs)

@@ -37,6 +37,7 @@ export default function (Vue) {
    * Vue instance.
    */
 
+  // 构造器扩展 编译步骤,调用this.constructor.options”。
   Vue.options = {
     directives,
     elementDirectives,

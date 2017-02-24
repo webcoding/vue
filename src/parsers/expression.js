@@ -127,6 +127,7 @@ function compileGetter (exp) {
 }
 
 /**
+ * 建立一个getter函数。需要eval。
  * Build a getter function. Requires eval.
  *
  * We isolate the try/catch so it doesn't affect the
@@ -183,6 +184,7 @@ function compileSetter (exp) {
 }
 
 /**
+ * 解析表达式
  * Parse an expression into re-written getter/setters.
  *
  * @param {String} exp
@@ -203,6 +205,7 @@ export function parseExpression (exp, needSet) {
   var res = { exp: exp }
   res.get = isSimplePath(exp) && exp.indexOf('[') < 0
     // optimized super simple getter
+    // 简单表达式getter
     ? makeGetterFn('scope.' + exp)
     // dynamic getter
     : compileGetter(exp)
@@ -214,6 +217,11 @@ export function parseExpression (exp, needSet) {
 }
 
 /**
+ * 检测是一个简单是路径表达式
+ * 比如:
+ *    1 v-on:show() 错误
+ *    2 v-on:show 正确
+ *
  * Check if an expression is a simple path.
  *
  * @param {String} exp

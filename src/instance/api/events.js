@@ -2,6 +2,7 @@ import { toArray } from '../../util/index'
 
 export default function (Vue) {
   /**
+   * 绑定事件
    * Listen on the given `event` with `fn`.
    *
    * @param {String} event
@@ -35,6 +36,7 @@ export default function (Vue) {
   }
 
   /**
+   * 解绑事件
    * Remove the given callback for `event` or all
    * registered callbacks.
    *

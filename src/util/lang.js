@@ -75,6 +75,8 @@ var hasOwnProperty = Object.prototype.hasOwnProperty
  * @param {String} key
  * @return {Boolean}
  */
+
+// 检查对象上是否有指定的属性
 export function hasOwn (obj, key) {
   return hasOwnProperty.call(obj, key)
 }
@@ -104,6 +106,10 @@ export function isReserved (str) {
 }
 
 /**
+ * 文本输出
+ * 如果是null 返回空
+ * 如果有值，通过toString强制转字符串
+ *
  * Guard text output, make sure undefined outputs
  * empty string
  *
@@ -233,6 +239,9 @@ export function bind (fn, ctx) {
 }
 
 /**
+ * 数组化
+ * 转化一个像数组的对象变成一个真实的数组
+ *
  * Convert an Array-like object to a real Array.
  *
  * @param {Array-like} list
@@ -251,6 +260,7 @@ export function toArray (list, start) {
 }
 
 /**
+ * 混入属性合并
  * Mix properties into target object.
  *
  * @param {Object} to
@@ -287,6 +297,8 @@ export function isObject (obj) {
  * @return {Boolean}
  */
 
+// 是一个真实的对象
+// 通过call prototype == [object object]
 var toString = Object.prototype.toString
 var OBJECT_STRING = '[object Object]'
 export function isPlainObject (obj) {
@@ -294,6 +306,7 @@ export function isPlainObject (obj) {
 }
 
 /**
+ * 数组检测
  * Array type check.
  *
  * @param {*} obj
@@ -303,6 +316,7 @@ export function isPlainObject (obj) {
 export const isArray = Array.isArray
 
 /**
+ * 定义一个属性
  * Define a property.
  *
  * @param {Object} obj
@@ -353,6 +367,9 @@ export function debounce (func, wait) {
 }
 
 /**
+ * 数组快速比较
+ * 找到对应值的索引
+ *
  * Manual indexOf because it's slightly faster than
  * native.
  *

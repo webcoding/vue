@@ -11,6 +11,7 @@ import { removeWithTransition } from '../transition/index'
  * @return {Element}
  */
 
+// 查询节点
 export function query (el) {
   if (typeof el === 'string') {
     var selector = el
@@ -148,6 +149,7 @@ export function prepend (el, target) {
  * @param {Element} el
  */
 
+// 通过el替换target节点
 export function replace (target, el) {
   var parent = target.parentNode
   if (parent) {
@@ -164,6 +166,7 @@ export function replace (target, el) {
  * @param {Boolean} [useCapture]
  */
 
+// 绑定事件
 export function on (el, event, cb, useCapture) {
   el.addEventListener(event, cb, useCapture)
 }
@@ -176,6 +179,7 @@ export function on (el, event, cb, useCapture) {
  * @param {Function} cb
  */
 
+// 销毁事件
 export function off (el, event, cb) {
   el.removeEventListener(event, cb)
 }

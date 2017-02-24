@@ -17,14 +17,14 @@ var filterState = 1
 var filterNameState = 2
 var filterArgState = 3
 
-var doubleChr = 0x22
-var singleChr = 0x27
-var pipeChr = 0x7C
-var escapeChr = 0x5C
-var spaceChr = 0x20
+var doubleChr = 0x22    // "
+var singleChr = 0x27    // ' 
+var pipeChr = 0x7C      // |
+var escapeChr = 0x5C    // \ 反斜杠
+var spaceChr = 0x20     //   空格
 
-var expStartChr = { 0x5B: 1, 0x7B: 1, 0x28: 1 }
-var expChrPair = { 0x5B: 0x5D, 0x7B: 0x7D, 0x28: 0x29 }
+var expStartChr = { 0x5B: 1, 0x7B: 1, 0x28: 1 }          // [ { (
+var expChrPair = { 0x5B: 0x5D, 0x7B: 0x7D, 0x28: 0x29 }  // ] } )
 
 function peek () {
   return str.charCodeAt(index + 1)
@@ -211,6 +211,11 @@ function processFilterArg (arg) {
  * @param {String} s
  * @return {Object}
  */
+
+// 指令解析
+// HTML ASCII 参考手册 http://w3school.com.cn/tags/html_ref_ascii.asp
+// ASCII码表在线查询 http://www.litefeel.com/tools/ascii.php
+// 转化字符的 Unicode 编码 str.charCodeAt(i)
 
 export function parseDirective (s) {
   var hit = cache.get(s)
