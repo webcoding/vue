@@ -1,3 +1,25 @@
+
+/**
+ * 此文件主要的职责是可以把一个 JSON 数据里的某一个“路径”下的数据取出来
+ * Vue.js 通过状态机管理来实现对路径的解析
+ * [图](http://img2.tbcdn.cn/L1/461/1/3acfc1236df2d6cd068dd8540e0b0baeb4b8916b)
+ *
+ * @example
+  ```javascript
+  var path = 'a.b[1].v'
+  var obj = {
+    a: {
+      b: [
+        {v: 1},
+        {v: 2},
+        {v: 3}
+      ]
+    }
+  }
+  parse(obj, path) // 2
+  ```
+ */
+
 import { parseExpression } from './expression'
 import {
   isLiteral,

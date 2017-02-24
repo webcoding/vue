@@ -10,6 +10,8 @@ import {
   extend
 } from '../../util/index'
 
+// Vue.js 为其组件设计了一个 [keep-alive] 的特性，如果这个特性存在，
+// 那么在组件被重复创建的时候，会通过缓存机制快速创建组件，以提升视图更新的性能
 export default {
 
   priority: COMPONENT,

@@ -65,6 +65,6 @@ src/
 ├── parsers/
 ├── transition/
 ├── util/             工具方法集合
-├── cache.js        缓存
+├── cache.js        缓存机制
 └── config.js       默认配置项
 ```

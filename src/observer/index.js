@@ -51,7 +51,7 @@ export function Observer (value) {
 
     // 重写数组的方法
     augment(value, arrayMethods, arrayKeys)
-    
+
     // 是数组，就每个数据分别观察
     this.observeArray(value)
   } else {
@@ -195,6 +195,13 @@ export function observe (value, vm) {
 
 /**
  * Define a reactive property on an Object.
+ * 数据监听机制
+ *
+ * 如何监听某一个对象属性的变化呢？
+ * 我们很容易想到 Object.defineProperty 这个 API，
+ * 为此属性设计一个特殊的 getter/setter，
+ * 然后在 setter 里触发一个函数，就可以达到监听的效果。
+ * 为此，Vue.js 对可能改变数据的方法，全进行 prototype 更改，参见 observer/array.js
  *
  * @param {Object} obj
  * @param {String} key

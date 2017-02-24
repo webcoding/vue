@@ -3,6 +3,8 @@
 - [Vue.js：轻量高效的前端组件化方案](http://www.csdn.net/article/1970-01-01/2825439)
 - [Vue api 中文文档](http://cn.vuejs.org/api/)
 - [Vue源码剖析](https://github.com/JsAaron/vue-analysis)
+- [Vue.js 源码学习笔记](http://jiongks.name/blog/vue-code-review/)
+- [剖析Vue原理&实现双向绑定MVVM](http://mp.weixin.qq.com/s?__biz=MzI3NTM1MjExMg==&mid=2247483789&idx=1&sn=e7297ec3443007015117637709f27521)
 - [部分操作练习 js-bits](https://github.com/webcoding/js-bits)
 
 ## 项目实现
