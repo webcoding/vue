@@ -74,6 +74,7 @@ export default function (Vue) {
 
   /**
    * Initialize the data.
+   * 把data的结果赋值给内部属性 ._data
    */
 
   Vue.prototype._initData = function () {
@@ -152,6 +153,7 @@ export default function (Vue) {
   /**
    * Proxy a property, so that
    * vm.prop === vm._data.prop
+   * 代理（proxy）data中的属性到 _data，使得 prop ===
    *
    * @param {String} key
    */

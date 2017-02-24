@@ -137,9 +137,11 @@ function compileGetter (exp) {
  * @return {Function|undefined}
  */
 
+// 获取字符串对应的变量的值，除了用eval，还可以用Function
 function makeGetterFn (body) {
   try {
     /* eslint-disable no-new-func */
+    // new Function('scope', 'return scope.message;')
     return new Function('scope', 'return ' + body + ';')
     /* eslint-enable no-new-func */
   } catch (e) {

@@ -46,6 +46,13 @@ export default function (Vue) {
    * @param {Element} el
    */
 
+  // _compile里分两步: compile 和 link
+  // 1 compile过程是分析给定元素（el）或者模版（template），
+  //    提取指令（directive）和创建对应离线的DOM元素（document fragment）
+  // 2 每个compile函数之后都会返回一个link function（linkFn）。
+  //    linkFn就是去实例化指令，将指令和新建的元素link在一起，然后将元素替换到DOM tree中去。
+  //    每个linkFn函数都会返回一个unlink function（unlinkFn）。
+  //    unlinkFn是在vm销毁的时候用的
   Vue.prototype._compile = function (el) {
     var options = this.$options
 
@@ -144,6 +151,8 @@ export default function (Vue) {
 
   Vue.prototype._bindDir = function (descriptor, node, host, scope, frag) {
     this._directives.push(
+      // 实例化 directive
+      // description 是 compile 结果token中保存的信息
       new Directive(descriptor, this, node, host, scope, frag)
     )
   }

@@ -34,6 +34,8 @@ export function withoutConversion (fn) {
  * object's property keys into getter/setters that
  * collect dependencies and dispatches updates.
  *
+ * Observer 观察者，就是使data变成“发布者”，watcher是订阅者，订阅data的变化。
+ *
  * @param {Array|Object} value
  * @constructor
  */
@@ -94,6 +96,7 @@ Observer.prototype.observeArray = function (items) {
 /**
  * Convert a property into getter/setter so we can emit
  * the events when the property is accessed/changed.
+ * 给 data.prop 属性添加reactiveGetter和reactiveSetter
  *
  * @param {String} key
  * @param {*} val
@@ -169,17 +172,22 @@ function copyAugment (target, src, keys) {
  * @static
  */
 
+// 在observe()函数中还做了些能否observe的条件判断，这些条件有：
 export function observe (value, vm) {
   if (!value || typeof value !== 'object') {
     return
   }
   var ob
   if (
+    // 1 没有被observe过（observe过的对象都会被添加__ob__属性）
     hasOwn(value, '__ob__') &&
     value.__ob__ instanceof Observer
   ) {
     ob = value.__ob__
   } else if (
+    // 2 只能是plain object（toString.call(ob) === "[object Object]"）或者数组
+    // 3 object是extensible的（Object.isExtensible(obj) === true）
+    // 4 不能是Vue实例（obj._isVue !== true）
     shouldConvert &&
     (isArray(value) || isPlainObject(value)) &&
     Object.isExtensible(value) &&
@@ -228,7 +236,7 @@ export function defineReactive (obj, key, val) {
     get: function reactiveGetter () {
       var value = getter ? getter.call(obj) : val
       if (Dep.target) {
-        dep.depend()
+        dep.depend()  // 收集依赖
         if (childOb) {
           childOb.dep.depend()
         }
@@ -252,7 +260,7 @@ export function defineReactive (obj, key, val) {
         val = newVal
       }
       childOb = observe(newVal)
-      dep.notify()
+      dep.notify()  // 观察这个数据的依赖（watcher）
     }
   })
 }

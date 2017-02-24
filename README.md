@@ -6,6 +6,8 @@
 - [Vue.js 源码学习笔记](http://jiongks.name/blog/vue-code-review/)
 - [剖析Vue原理&实现双向绑定MVVM](http://mp.weixin.qq.com/s?__biz=MzI3NTM1MjExMg==&mid=2247483789&idx=1&sn=e7297ec3443007015117637709f27521)
 - [部分操作练习 js-bits](https://github.com/webcoding/js-bits)
+- [Vue.js源码（1）：Hello World的背后](https://segmentfault.com/a/1190000006866881)
+- [Vue.js源码（2）：初探List Rendering](https://segmentfault.com/a/1190000006938217)
 
 ## 项目实现
 

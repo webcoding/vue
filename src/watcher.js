@@ -95,7 +95,7 @@ export default function Watcher (vm, expOrFn, cb, options) {
  */
 
 Watcher.prototype.get = function () {
-  this.beforeGet()
+  this.beforeGet()      // -> Dep.target = this
   var scope = this.scope || this.vm
   var value
   try {
@@ -126,7 +126,7 @@ Watcher.prototype.get = function () {
   if (this.postProcess) {
     value = this.postProcess(value)
   }
-  this.afterGet()
+  this.afterGet()     // -> Dep.target = null
   return value
 }
 
@@ -340,7 +340,7 @@ Watcher.prototype.run = function () {
  * 仅仅为懒加载watchers的get方法使用
  * 求出观察的值
  * b:function(){
- *    return this.a + this.c
+ *   return this.a + this.c
  * }
  *
  * b 生成了watcher
@@ -353,18 +353,18 @@ Watcher.prototype.run = function () {
 Watcher.prototype.evaluate = function () {
   // avoid overwriting another watcher that is being
   // collected.
-  //避免引用丢失
-  //this.get中会做依赖处理，会覆盖Dep.target
+  // 避免引用丢失
+  // this.get中会做依赖处理，会覆盖Dep.target
   var current = Dep.target
 
-  //获取值 并且设置依赖
+  // 获取值 并且设置依赖
   this.value = this.get()
   this.dirty = false
   Dep.target = current
 }
 
 /**
- * 用当前的watcher收集所有的dess合集 
+ * 用当前的watcher收集所有的dess合集
  *
  * Depend on all deps collected by this watcher.
  */

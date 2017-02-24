@@ -1,5 +1,7 @@
 
-source: http://jiongks.name/blog/vue-code-review/
+## 参看文档
+
+- [Vue.js 源码学习笔记](http://jiongks.name/blog/vue-code-review/)
 
 # Vue 程序结构
 
@@ -68,3 +70,43 @@ src/
 ├── cache.js        缓存机制
 └── config.js       默认配置项
 ```
+
+
+## [Vue.js源码（1）：Hello World的背后](https://segmentfault.com/a/1190000006866881)
+
+```vue
+<div id="mountNode">{{message}}</div>
+
+var vm = new Vue({
+  el: '#mountNode',
+  data: function () {
+    return {
+      message: 'Hello World'
+    };
+  }
+});
+```
+
+问题：
+
+- new Vue()的过程中，内部到底有哪些步骤
+- 如何收集依赖
+- 如何计算表达式
+- 如何表达式的值如何反应在DOM上的
+
+过程：
+
+- observe: 把{message: 'Hello World'}变成是reactive的
+compile: compileTextNode "{{message}}"，解析出指令(directive = v-text)和表达式(expression = message)，创建 fragment(new TextNode)准备替换
+- link：实例化directive，将创建的fragment和directive链接起来，将fragment替换在DOM上
+- bind: 通过directive对应的watcher获取依赖(message)的值("Hello World")，v-text去update值到fragment上
+
+创建observer的过程是：
+
+- `new Observer({message: 'Hello World'})`
+- 实例化一个Dep对象，用来收集依赖
+- walk（`Observer.prototype.walk()`）数据的每一个属性，这里只有message
+- 将属性变成reactive的(`Observer.protoype.convert()`)
+
+
+## [Vue.js源码（2）：初探List Rendering](https://segmentfault.com/a/1190000006938217)
