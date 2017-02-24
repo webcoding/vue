@@ -8,7 +8,15 @@ import {
   hasOwn
 } from '../util/index'
 
-// arrayKeys 是什么，应该就是 push，pop那些数组原型方法名集合
+/**
+ * arrayKeys 是什么，应该就是 push，pop那些数组原型方法名集合
+ *
+ * NOTE:
+ * 增强数组之前 arr.__proto__ -> Array.prototype
+ * 增强之后 arr.__proto__ -> arrayMethods[__proto__] -> Array.prototype
+ * @see https://segmentfault.com/a/1190000006938217#articleHeader2
+ */
+
 const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
 
 /**
@@ -44,19 +52,27 @@ export function withoutConversion (fn) {
 export function Observer (value) {
   this.value = value
   this.dep = new Dep()
+
   // 定义一个__ob__（其中的 value引用this）
   def(value, '__ob__', this)
-  if (isArray(value)) {
+
+  if (isArray(value)) {   // 数组分支
+    /**
+      * augment 增强数组，即对数组进行扩展，使其能detect change。这里面有两个内容，
+      * 一是拦截数组的 [mutation methods](http://vuejs.org/guide/list.html#Mutation-Methods)（导致数组本身发生变化的方法）
+      *    拦截有两个方法：如果浏览器实现 __proto__ 那么就使用protoAugment，否则就使用copyAugment。
+      * 二是提供 $set 和 $remove 两个[便利方法](http://vuejs.org/guide/list.html#Caveats) 。
+     */
     var augment = hasProto
       ? protoAugment
-      : copyAugment
+      : copyAugment       // 选择增强方法
 
     // 重写数组的方法
     augment(value, arrayMethods, arrayKeys)
 
     // 是数组，就每个数据分别观察
     this.observeArray(value)
-  } else {
+  } else {    // plain object分支
     this.walk(value)
   }
 }
@@ -86,7 +102,7 @@ Observer.prototype.walk = function (obj) {
  */
 
 // 如果是数组
-// 分解每一个元素建立观察
+// 分解每一个元素建立观察(生成Observer实例)
 Observer.prototype.observeArray = function (items) {
   for (var i = 0, l = items.length; i < l; i++) {
     observe(items[i])
@@ -140,6 +156,7 @@ Observer.prototype.removeVm = function (vm) {
  * @param {Object} src
  */
 
+// 截取原型链拦截
 function protoAugment (target, src) {
   /* eslint-disable no-proto */
   target.__proto__ = src
@@ -154,6 +171,7 @@ function protoAugment (target, src) {
  * @param {Object} proto
  */
 
+// 通过定义属性拦截
 function copyAugment (target, src, keys) {
   for (var i = 0, l = keys.length; i < l; i++) {
     var key = keys[i]

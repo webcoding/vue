@@ -9,6 +9,12 @@
 - [Vue.js源码（1）：Hello World的背后](https://segmentfault.com/a/1190000006866881)
 - [Vue.js源码（2）：初探List Rendering](https://segmentfault.com/a/1190000006938217)
 
+如果你想从零实现一个轻量级 vue，可以参看
+
+- [简化版vuejs](https://github.com/petitspois/peel-vue)
+- [Vue 简单实现](https://github.com/fwing1987/MyVue)
+- [rewrite vue.js(es6)](https://github.com/xiaofuzi/re-vue)
+
 ## 项目实现
 
 - [vue-spa-demo](https://github.com/lazyhero/vue-spa-demo)

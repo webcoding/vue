@@ -1,6 +1,15 @@
 import { def, indexOf } from '../util/index'
 
 const arrayProto = Array.prototype
+
+/**
+ * 在拦截器 arrayMethods 里面，就是对这些mutation methods进行包装：
+ *
+ * 调用原生的Array.prototype中的方法
+ * 检查是否有新的值被插入（主要是push, unshift和splice方法）
+ * 如果有新值插入，observe它们
+ * 最后就是notify change：调用observer的dep.notify()
+ */
 export const arrayMethods = Object.create(arrayProto)
 
 /**

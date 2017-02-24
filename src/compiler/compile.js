@@ -46,6 +46,8 @@ const DEFAULT_TERMINAL_PRIORITY = 2000
  * @return {Function}
  */
 
+// compile 是一个递归遍历DOM tree的过程，
+// 这个过程对每个node进行指令类型，指令参数，表达式，过滤器等的解析。
 export function compile (el, options, partial) {
   // link function for the node itself.
   // 对当前dom进行编译
@@ -372,6 +374,10 @@ function compileElement (el, options) {
 
 /**
  * Compile a textNode and return a nodeLinkFn.
+ *
+ * parseText：其实就是tokenization（标记化：从字符串中提取符号，语句等有意义的元素），得到的结果是tokens
+ * processTextToken：从tokens中分析出指令类型，表达式和过滤器，并创建新的空的TextNode
+ * 创建fragment，将新的TextNode append进去
  *
  * @param {TextNode} node
  * @param {Object} options

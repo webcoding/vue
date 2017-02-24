@@ -153,7 +153,7 @@ export default function (Vue) {
   /**
    * Proxy a property, so that
    * vm.prop === vm._data.prop
-   * 代理（proxy）data中的属性到 _data，使得 prop ===
+   * 属性代理（proxy）data中的属性到 _data，使得 prop ===
    *
    * @param {String} key
    */

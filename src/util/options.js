@@ -321,7 +321,7 @@ function guardArrayAssets (assets) {
  * Core utility used in both instantiation and inheritance.
  * 各种属性的合并，例如：props, methods, computed, watch等，返回一个新值
  * 这里还定义了每种属性merge的默认算法（strategy），
- * 这些strategy都可以配置的，参考 [Custom Option Merge Strategy](http://cn.vuejs.org/v2/guide/mixins.html#自定义选项混合策略)
+ * 这些strategy都可以配置的，参考 [Custom Option Merge Strategy](https://vuejs.org/v2/guide/mixins.html#Custom-Option-Merge-Strategies)
  *
  *
  * @param {Object} parent

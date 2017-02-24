@@ -152,7 +152,7 @@ export default function (Vue) {
   Vue.prototype._bindDir = function (descriptor, node, host, scope, frag) {
     this._directives.push(
       // 实例化 directive
-      // description 是 compile 结果token中保存的信息
+      // descriptor 是 compile 结果token中保存的信息
       new Directive(descriptor, this, node, host, scope, frag)
     )
   }

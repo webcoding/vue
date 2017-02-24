@@ -1,7 +1,7 @@
 /* globals MutationObserver */
 
 // can we use __proto__?
-// 对象是否有__proto__原型引用
+// 对象是否有__proto__原型引用(@use observer/index Fn:Observer)
 export const hasProto = '__proto__' in {}
 
 // Browser environment sniffing
@@ -129,7 +129,7 @@ export const nextTick = (function () {
     var counter = 1
     var observer = new MutationObserver(nextTickHandler)
     var textNode = document.createTextNode(String(counter))
-    
+
     // 节点内容或节点文本的变动
     observer.observe(textNode, {
       characterData: true
