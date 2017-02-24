@@ -137,6 +137,7 @@ export default function (Vue) {
       : event.name
     // if no child has registered for this event,
     // then there's no need to broadcast.
+    //
     if (!this._eventsCount[event]) return
     var children = this.$children
     var args = toArray(arguments)
@@ -196,6 +197,7 @@ export default function (Vue) {
     // to do bookkeeping for them
     if (!parent || !count || hookRE.test(event)) return
     while (parent) {
+      // 子 vm 计数
       parent._eventsCount[event] =
         (parent._eventsCount[event] || 0) + count
       parent = parent.$parent

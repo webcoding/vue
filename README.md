@@ -3,7 +3,7 @@
 - [Vue.js：轻量高效的前端组件化方案](http://www.csdn.net/article/1970-01-01/2825439)
 - [Vue api 中文文档](http://cn.vuejs.org/api/)
 - [Vue源码剖析](https://github.com/JsAaron/vue-analysis)
-- [js-bits](https://github.com/webcoding/js-bits)
+- [部分操作练习 js-bits](https://github.com/webcoding/js-bits)
 
 ## 项目实现
 

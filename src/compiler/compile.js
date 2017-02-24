@@ -48,10 +48,13 @@ const DEFAULT_TERMINAL_PRIORITY = 2000
 
 export function compile (el, options, partial) {
   // link function for the node itself.
+  // 对当前dom进行编译
   var nodeLinkFn = partial || !options._asComponent
     ? compileNode(el, options)
     : null
+
   // link function for the childNodes
+  // 是否存在子节点，对子节点进行编译
   var childLinkFn =
     !(nodeLinkFn && nodeLinkFn.terminal) &&
     !isScript(el) &&
