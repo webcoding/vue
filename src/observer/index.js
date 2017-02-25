@@ -48,6 +48,9 @@ export function withoutConversion (fn) {
  * @constructor
  */
 
+// Observer是将输入的Plain Object进行处理，利用Object.defineProperty转化为getter与setter，
+// 从而在赋值与取值时进行拦截 这是Vue响应式框架的基础
+
 // 给每一个观察的数据组设置观察
 export function Observer (value) {
   this.value = value
