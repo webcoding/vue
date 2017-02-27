@@ -336,7 +336,10 @@ export const isArray = Array.isArray
 export function def (obj, key, val, enumerable) {
   /**
    * Object.defineProperty() 方法会直接在一个对象上定义一个新属性，
-   * 或者修改一个已经存在的属性，并返回这个对象(https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
+   * 或者修改一个已经存在的属性，并返回这个对象
+   * - [defineProperty](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
+   * - [解析神奇的 Object.defineProperty](https://segmentfault.com/a/1190000004346467)
+   *
    */
   Object.defineProperty(obj, key, {
     value: val,

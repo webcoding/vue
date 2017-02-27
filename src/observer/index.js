@@ -251,6 +251,14 @@ export function defineReactive (obj, key, val) {
 
   // 继续分解 val，因为 val 可能还是数组或对象结构
   var childOb = observe(val)
+
+  /**
+   * NOTE: Object.defineProperty(obj, key, descriptor) 方法，https://segmentfault.com/a/1190000004346467
+   *       descriptor 中不能同时设置访问器（get 和 set）和 wriable 或 value，否则会错，
+   *       就是说想用 get 和 set，就不能用 writable 或 value 中的任何一个
+   *
+   * @more /instace/internal/state.js -> Object.defineProperty
+   */
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
