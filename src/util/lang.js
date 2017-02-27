@@ -71,7 +71,7 @@ export function del (obj, key) {
 }
 
 // 判断一个属性是定义在对象本身而不是继承自原型链
-// hasOwnProperty 直接从原型链中取
+// hasOwnProperty 方法是唯一一个处理对象属性而不会往上遍历原型链的
 var hasOwnProperty = Object.prototype.hasOwnProperty
 
 /**
