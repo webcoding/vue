@@ -1,6 +1,8 @@
 import { warn, query, inDoc } from '../../util/index'
 import { compile } from '../../compiler/index'
 
+// 3个生命周期类api
+// $mount $destroy $compile
 export default function (Vue) {
   /**
    * Set instance target element and kick off the compilation

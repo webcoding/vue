@@ -15,6 +15,9 @@ import {
   bind
 } from '../../util/index'
 
+// 状态相关方法
+// $data
+// 其他原型方法 _initState _initProps _initData _setData _proxy _digest _initComputed _initMethods _initMeta
 export default function (Vue) {
   /**
    * Accessor for `$data` property, since setting $data

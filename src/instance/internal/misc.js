@@ -4,6 +4,8 @@ import {
   warn
 } from '../../util/index'
 
+// 其他原型方法
+// _applyFilters _resolveComponent
 export default function (Vue) {
   /**
    * Apply a list of filter (descriptors) to a value.

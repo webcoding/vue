@@ -1,4 +1,20 @@
 
+## 源码阅读
+
+[关于ES6模块](http://es6.ruanyifeng.com/#docs/module)
+
+ES6 模块不是对象，而是通过export命令显式指定输出的代码，再通过import命令输入。
+
+```javascript
+// ES6模块
+import { stat, exists, readFile } from 'fs';
+```
+
+上面代码的实质是从fs模块加载3个方法，其他方法不加载。这种加载称为“编译时加载”或者静态加载，即 ES6 可以在编译时就完成模块加载，效率要比 CommonJS 模块的加载方式高。当然，这也导致了没法引用 ES6 模块本身，因为它不是对象。
+
+由于 ES6 模块是编译时加载，使得静态分析成为可能。有了它，就能进一步拓宽 JavaScript 的语法，比如引入宏（macro）和类型检验（type system）这些只能靠静态分析实现的功能。
+
+
 ## 参看文档
 
 - [Vue.js 源码学习笔记](http://jiongks.name/blog/vue-code-review/)

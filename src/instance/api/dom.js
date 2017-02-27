@@ -13,6 +13,8 @@ import {
   removeWithTransition
 } from '../../transition/index'
 
+// 6个DOM操作api
+// $nextTick $appendTo $prependTo $before $after $remove
 export default function (Vue) {
   /**
    * Convenience on-instance nextTick. The callback is

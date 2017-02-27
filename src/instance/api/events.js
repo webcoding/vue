@@ -1,5 +1,7 @@
 import { toArray } from '../../util/index'
 
+// 6个事件类操作的api
+// $on $once $off $emit $broadcast $dispatch
 export default function (Vue) {
   /**
    * 绑定事件

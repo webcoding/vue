@@ -13,6 +13,8 @@ import {
   resolveSlots
 } from '../../compiler/index'
 
+// 生命周期相关原型方法
+// _updateRef _compile _initElement _bindDir _destroy _cleanup
 export default function (Vue) {
   /**
    * Update v-ref for component.

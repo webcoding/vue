@@ -2,6 +2,7 @@ import { warn } from './debug'
 import { resolveAsset } from './options'
 import { getBindAttr } from './dom'
 
+// 正则 /i(忽略大小写) /g(全文查找所有匹配) /m(多行查找)
 export const commonTagRE = /^(div|p|span|img|a|b|i|br|ul|ol|li|h1|h2|h3|h4|h5|h6|code|pre|table|th|td|tr|form|label|input|select|option|nav|article|section|header|footer|main)$/i
 export const reservedTagRE = /^(slot|partial|component)$/i
 

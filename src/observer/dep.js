@@ -5,7 +5,7 @@ let uid = 0
 /**
  * A dep is an observable that can have multiple
  * directives subscribing to it.
- * 依赖收集和notify
+ * Dep函数 （发布订阅者模式应用），依赖收集和通知notify
  *
  * @constructor
  */

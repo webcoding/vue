@@ -38,15 +38,18 @@ export function set (obj, key, val) {
 
 /**
  * Delete a property and trigger change if necessary.
+ * 删除一个属性必要时触发改变
  *
  * @param {Object} obj
  * @param {String} key
  */
 
 export function del (obj, key) {
+  // 不处理从原型继承的属性，直接 return false
   if (!hasOwn(obj, key)) {
     return
   }
+  // 处理直接挂载的属性（direct properties），只是删除对象的引用
   delete obj[key]
   var ob = obj.__ob__
   if (!ob) {
@@ -67,16 +70,19 @@ export function del (obj, key) {
   }
 }
 
+// 判断一个属性是定义在对象本身而不是继承自原型链
+// hasOwnProperty 直接从原型链中取
 var hasOwnProperty = Object.prototype.hasOwnProperty
+
 /**
  * Check whether the object has the property.
+ * 检查对象上是否有指定的属性
  *
  * @param {Object} obj
  * @param {String} key
  * @return {Boolean}
  */
 
-// 检查对象上是否有指定的属性
 export function hasOwn (obj, key) {
   return hasOwnProperty.call(obj, key)
 }
@@ -239,10 +245,10 @@ export function bind (fn, ctx) {
 }
 
 /**
+ * Convert an Array-like object to a real Array.
+ *
  * 数组化
  * 转化一个像数组的对象变成一个真实的数组
- *
- * Convert an Array-like object to a real Array.
  *
  * @param {Array-like} list
  * @param {Number} [start] - start index
@@ -260,8 +266,8 @@ export function toArray (list, start) {
 }
 
 /**
- * 混入属性合并
  * Mix properties into target object.
+ * 混入属性合并
  *
  * @param {Object} to
  * @param {Object} from
@@ -292,22 +298,24 @@ export function isObject (obj) {
 /**
  * Strict object type check. Only returns true
  * for plain JavaScript objects.
+ * 严格对象类型检查，只有为**纯粹的对象**时，才返回 true
+ * toString.call({}) === [object Object]
+ * toString.call(null) === [object Null]
  *
  * @param {*} obj
  * @return {Boolean}
  */
 
-// 是一个真实的对象
-// 通过call prototype == [object object]
 var toString = Object.prototype.toString
 var OBJECT_STRING = '[object Object]'
+
 export function isPlainObject (obj) {
   return toString.call(obj) === OBJECT_STRING
 }
 
 /**
- * 数组检测
  * Array type check.
+ * 调用 Array 方法中的 isArray 方法检测数组
  *
  * @param {*} obj
  * @return {Boolean}
@@ -316,8 +324,8 @@ export function isPlainObject (obj) {
 export const isArray = Array.isArray
 
 /**
- * 定义一个属性
  * Define a property.
+ * 定义一个属性
  *
  * @param {Object} obj
  * @param {String} key
@@ -326,6 +334,10 @@ export const isArray = Array.isArray
  */
 
 export function def (obj, key, val, enumerable) {
+  /**
+   * Object.defineProperty() 方法会直接在一个对象上定义一个新属性，
+   * 或者修改一个已经存在的属性，并返回这个对象(https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty)
+   */
   Object.defineProperty(obj, key, {
     value: val,
     enumerable: !!enumerable,
@@ -367,11 +379,11 @@ export function debounce (func, wait) {
 }
 
 /**
- * 数组快速比较
- * 找到对应值的索引
- *
  * Manual indexOf because it's slightly faster than
  * native.
+ *
+ * 数组快速比较
+ * 找到对应值的索引
  *
  * @param {Array} arr
  * @param {*} obj

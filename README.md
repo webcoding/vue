@@ -8,6 +8,9 @@
 - [部分操作练习 js-bits](https://github.com/webcoding/js-bits)
 - [Vue.js源码（1）：Hello World的背后](https://segmentfault.com/a/1190000006866881)
 - [Vue.js源码（2）：初探List Rendering](https://segmentfault.com/a/1190000006938217)
+- [vue源码解读预热-0](http://blog.csdn.net/yechonglaile/article/details/51340294)
+- [vueJs源码解读0-1](http://blog.csdn.net/yechonglaile/article/details/51362046)
+- [vueJs源码解读0-2](http://blog.csdn.net/yechonglaile/article/details/51396586)
 
 如果你想从零实现一个轻量级 vue，可以参看
 

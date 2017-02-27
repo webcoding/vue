@@ -28,8 +28,8 @@ import { commonTagRE, reservedTagRE } from './component'
 var strats = config.optionMergeStrategies = Object.create(null)
 
 /**
- * 助手递归合并两个数据对象在一起
  * Helper that recursively merges two data objects together.
+ * 助手递归合并两个数据对象在一起
  */
 
 function mergeData (to, from) {
@@ -143,12 +143,13 @@ strats.activate = function (parentVal, childVal) {
 
 /**
  * Assets
- * 当存在一个vm(实例创建), 我们需要做的
- * 构造函数之间的三方合并选项, 实例
  *
  * When a vm is present (instance creation), we need to do
  * a three-way merge between constructor options, instance
  * options and parent options.
+ *
+ * 当存在一个vm(实例创建), 我们需要做的
+ * 构造函数之间的三方合并选项, 实例
  */
 
 function mergeAssets (parentVal, childVal) {
@@ -204,8 +205,8 @@ strats.computed = function (parentVal, childVal) {
 }
 
 /**
- * 默认策略
  * Default strategy.
+ * 默认策略
  */
 
 var defaultStrat = function (parentVal, childVal) {
@@ -225,6 +226,9 @@ function guardComponents (options) {
   if (options.components) {
     var components = options.components =
       guardArrayAssets(options.components)
+
+    // 返回一个枚举所有对象属性的数组，类似于for-in 枚举
+    // 并不保证按对象的顺序输各个属性 ，不可预测的顺序 unpredicted order
     var ids = Object.keys(components)
     var def
     if (process.env.NODE_ENV !== 'production') {
@@ -267,9 +271,9 @@ function guardProps (options) {
     i = props.length
     while (i--) {
       val = props[i]
-      if (typeof val === 'string') {
+      if (typeof val === 'string') {  // 为String类型的时候将其值设置为空
         options.props[val] = null
-      } else if (val.name) {
+      } else if (val.name) {          // 取val.name
         options.props[val.name] = val
       }
     }
@@ -294,20 +298,28 @@ function guardProps (options) {
  */
 
 function guardArrayAssets (assets) {
+  // assets 也即是传递过来的 options.components，有三种形式
+  // 1. components: {'s':{},'d':{}}
+  // 2. componets: [{'name':'...','id':'...'}]
+  // 3. ?
   if (isArray(assets)) {
     var res = {}
     var i = assets.length
     var asset
+
+    // 数组循环取值组成键值对的形式 key值由id决定
     while (i--) {
       asset = assets[i]
       var id = typeof asset === 'function'
         ? ((asset.options && asset.options.name) || asset.id)
         : (asset.name || asset.id)
       if (!id) {
+        // id异常情况
         process.env.NODE_ENV !== 'production' && warn(
           'Array-syntax assets must provide a "name" or "id" field.'
         )
       } else {
+        // 规整为key-value的形式
         res[id] = asset
       }
     }
@@ -320,7 +332,7 @@ function guardArrayAssets (assets) {
  * Merge two option objects into a new one.
  * Core utility used in both instantiation and inheritance.
  * 各种属性的合并，例如：props, methods, computed, watch等，返回一个新值
- * 这里还定义了每种属性merge的默认算法（strategy），
+ * 这里还定义了每种属性merge的默认策略（strategy），
  * 这些strategy都可以配置的，参考 [Custom Option Merge Strategy](https://vuejs.org/v2/guide/mixins.html#Custom-Option-Merge-Strategies)
  *
  *
@@ -331,8 +343,13 @@ function guardArrayAssets (assets) {
  */
 
 export function mergeOptions (parent, child, vm) {
+  // 先将 options:components 与 props 定义好
   guardComponents(child)
+
+  // 将所有的props规格化为基于对象的格式（虽然支持数组与对象的两种形式）
+  // child 也即是为init中传入的options
   guardProps(child)
+
   if (process.env.NODE_ENV !== 'production') {
     if (child.propsData && !vm) {
       warn('propsData can only be used as an instantiation option.')

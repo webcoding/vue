@@ -7,6 +7,8 @@ import {
 
 const eventRE = /^v-on:|^@/
 
+// 事件相关原型方法
+// _initEvents _initDOMHooks _callHook
 export default function (Vue) {
   /**
    * Setup the instance's option events & watchers.

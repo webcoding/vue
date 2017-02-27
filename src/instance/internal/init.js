@@ -2,6 +2,8 @@ import { mergeOptions } from '../../util/index'
 
 let uid = 0
 
+// 匿名函数 `export default`，参数是 Vue
+// 这种方式匿名方式 `export`，那么 `import` 可以用任意名称
 export default function (Vue) {
   /**
    * The main init sequence. This is called for every
@@ -14,17 +16,22 @@ export default function (Vue) {
    *                           in to the constructor.
    */
 
+  // 对传入的 Vue 添加原型方法 _init
   Vue.prototype._init = function (options) {
     options = options || {}
 
+    // $ 开头的表示 public-api, _ 开头的表示 internal-api
+    // 八大实例属性:
+    // $el $parent $root $children $options $refs $els $state
     this.$el = null
     this.$parent = options.parent
     this.$root = this.$parent
       ? this.$parent.$root
       : this
-    this.$children = []
-    this.$refs = {}       // child vm references
-    this.$els = {}        // element references
+    this.$children = []   // 直接子组件
+    this.$refs = {}       // child vm references 包含注册有 v-ref 的子组件
+    this.$els = {}        // element references  包含注册有 v-el 的 DOM 元素
+
     this._watchers = []   // all watchers as an array
     this._directives = [] // all directives
 
@@ -34,10 +41,10 @@ export default function (Vue) {
     // a flag to avoid this being observed
     this._isVue = true
 
-    // events bookkeeping
+    // events bookkeeping 事件统计
     this._events = {}            // registered callbacks
 
-    // @see ../api/events.js -> $broadcast
+    // @see /instance/api/events.js -> $broadcast
     // 这是为了避免不必要的深度遍历：在有广播事件到来时，如果当前 vm 的 _eventsCount 为 0，
     // 则不必向其子 vm 继续传播该事件。
     this._eventsCount = {}       // for $broadcast optimization

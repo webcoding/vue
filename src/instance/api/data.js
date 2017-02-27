@@ -7,6 +7,8 @@ import { parseExpression } from '../../parsers/expression'
 
 const filterRE = /[^|]\|[^|]/
 
+// 7个数据类api
+// $get $set $delete $watch $eval $interpolate $log
 export default function (Vue) {
   /**
    * Get the value from an expression on this vm.
