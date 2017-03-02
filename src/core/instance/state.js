@@ -55,6 +55,8 @@ export function initState (vm: Component) {
 const isReservedProp = { key: 1, ref: 1, slot: 1 }
 
 function initProps (vm: Component, propsOptions: Object) {
+  // vm.$options.props是我们为组件定义的属性
+  // 取出使用者传入的propsData
   const propsData = vm.$options.propsData || {}
   const props = vm._props = {}
   // cache prop keys so that future props updates can iterate using Array
@@ -62,6 +64,10 @@ function initProps (vm: Component, propsOptions: Object) {
   const keys = vm.$options._propKeys = []
   const isRoot = !vm.$parent
   // root instance props should be converted
+  // 这里用来标志是否将要propsData的value转换为监控对象，
+  // 因为propsData可能指向其它对象，也许不能够被监控，
+  // 因而除了propsData默认的value可以被监控，
+  // 其它用户传入的值都不可信，因此也就不转换
   observerState.shouldConvert = isRoot
   for (const key in propsOptions) {
     keys.push(key)
@@ -112,11 +118,13 @@ function initData (vm: Component) {
     )
   }
   // proxy data on instance
+  // 将属性代理的vm上， 可以通过vm.xx访问到vm._data.xx
   const keys = Object.keys(data)
   const props = vm.$options.props
   let i = keys.length
   while (i--) {
     if (props && hasOwn(props, keys[i])) {
+      // 是props，则不代理
       process.env.NODE_ENV !== 'production' && warn(
         `The data property "${keys[i]}" is already declared as a prop. ` +
         `Use prop default value instead.`,
@@ -185,6 +193,7 @@ function createComputedGetter (key) {
 function initMethods (vm: Component, methods: Object) {
   const props = vm.$options.props
   for (const key in methods) {
+    // 将this绑定到vm
     vm[key] = methods[key] == null ? noop : bind(methods[key], vm)
     if (process.env.NODE_ENV !== 'production') {
       if (methods[key] == null) {

@@ -30,6 +30,8 @@ export const observerState = {
  * object. Once attached, the observer converts target
  * object's property keys into getter/setters that
  * collect dependencies and dispatches updates.
+ *
+ * Observer 可以接收对象或数组
  */
 export class Observer {
   value: any;
@@ -41,13 +43,16 @@ export class Observer {
     this.dep = new Dep()
     this.vmCount = 0
     def(value, '__ob__', this)
+
     if (Array.isArray(value)) {
+      // 处理数组
       const augment = hasProto
         ? protoAugment
         : copyAugment
       augment(value, arrayMethods, arrayKeys)
       this.observeArray(value)
     } else {
+      // 处理对象
       this.walk(value)
     }
   }
@@ -56,6 +61,8 @@ export class Observer {
    * Walk through each property and convert them into
    * getter/setters. This method should only be called when
    * value type is Object.
+   *
+   * 遍历对象的属性
    */
   walk (obj: Object) {
     const keys = Object.keys(obj)
@@ -108,6 +115,9 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     return
   }
   let ob: Observer | void
+
+  // 已经是一个监控对象了,返会observer
+  // 一个监控对象的标志就是含有属性'__ob__'，并且属性值是Observer的实例
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
