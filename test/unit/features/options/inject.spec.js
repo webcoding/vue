@@ -144,6 +144,29 @@ describe('Options provide/inject', () => {
     expect(child.baz).toBe(3)
   })
 
+  // Github issue #5194
+  it('should work with functional', () => {
+    new Vue({
+      template: `<child/>`,
+      provide: {
+        foo: 1,
+        bar: false
+      },
+      components: {
+        child: {
+          functional: true,
+          inject: ['foo', 'bar'],
+          render (h, context) {
+            const { injections } = context
+            injected = [injections.foo, injections.bar]
+          }
+        }
+      }
+    }).$mount()
+
+    expect(injected).toEqual([1, false])
+  })
+
   if (typeof Reflect !== 'undefined' && isNative(Reflect.ownKeys)) {
     it('with Symbol keys', () => {
       const s = Symbol()
@@ -162,4 +185,59 @@ describe('Options provide/inject', () => {
       expect(vm.$el.textContent).toBe('123')
     })
   }
+
+  // Github issue #5223
+  it('should work with reactive array', done => {
+    const vm = new Vue({
+      template: `<div><child></child></div>`,
+      data () {
+        return {
+          foo: []
+        }
+      },
+      provide () {
+        return {
+          foo: this.foo
+        }
+      },
+      components: {
+        child: {
+          inject: ['foo'],
+          template: `<span>{{foo.length}}</span>`
+        }
+      }
+    }).$mount()
+
+    expect(vm.$el.innerHTML).toEqual(`<span>0</span>`)
+    vm.foo.push(vm.foo.length)
+    vm.$nextTick(() => {
+      expect(vm.$el.innerHTML).toEqual(`<span>1</span>`)
+      vm.foo.pop()
+      vm.$nextTick(() => {
+        expect(vm.$el.innerHTML).toEqual(`<span>0</span>`)
+        done()
+      })
+    })
+  })
+
+  it('should warn when injections has been modified', () => {
+    const key = 'foo'
+    const vm = new Vue({
+      provide: {
+        foo: 1
+      }
+    })
+
+    const child = new Vue({
+      parent: vm,
+      inject: ['foo']
+    })
+
+    expect(child.foo).toBe(1)
+    child.foo = 2
+    expect(
+      `Avoid mutating an injected value directly since the changes will be ` +
+      `overwritten whenever the provided component re-renders. ` +
+      `injection being mutated: "${key}"`).toHaveBeenWarned()
+  })
 })

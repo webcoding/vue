@@ -7,10 +7,12 @@ describe('Error handling', () => {
   // hooks that prevents the component from rendering, but should not
   // break parent component
   ;[
+    ['data', 'data()'],
     ['render', 'render function'],
     ['beforeCreate', 'beforeCreate hook'],
     ['created', 'created hook'],
-    ['beforeMount', 'beforeMount hook']
+    ['beforeMount', 'beforeMount hook'],
+    ['directive bind', 'directive foo bind hook']
   ].forEach(([type, description]) => {
     it(`should recover from errors in ${type}`, done => {
       const vm = createTestInstance(components[type])
@@ -31,7 +33,8 @@ describe('Error handling', () => {
   // error in beforeUpdate/updated should affect neither child nor parent
   ;[
     ['beforeUpdate', 'beforeUpdate hook'],
-    ['updated', 'updated hook']
+    ['updated', 'updated hook'],
+    ['directive update', 'directive foo update hook']
   ].forEach(([type, description]) => {
     it(`should recover from errors in ${type} hook`, done => {
       const vm = createTestInstance(components[type])
@@ -44,7 +47,8 @@ describe('Error handling', () => {
 
   ;[
     ['beforeDestroy', 'beforeDestroy hook'],
-    ['destroyed', 'destroyed hook']
+    ['destroyed', 'destroyed hook'],
+    ['directive unbind', 'directive foo unbind hook']
   ].forEach(([type, description]) => {
     it(`should recover from errors in ${type} hook`, done => {
       const vm = createTestInstance(components[type])
@@ -128,6 +132,16 @@ describe('Error handling', () => {
 function createErrorTestComponents () {
   const components = {}
 
+  // data
+  components.data = {
+    data () {
+      throw new Error('data')
+    },
+    render (h) {
+      return h('div')
+    }
+  }
+
   // render error
   components.render = {
     render (h) {
@@ -159,6 +173,22 @@ function createErrorTestComponents () {
     }
     afterComp[after] = function () {
       throw new Error(after)
+    }
+  })
+
+  // directive hooks errors
+  ;['bind', 'update', 'unbind'].forEach(hook => {
+    const key = 'directive ' + hook
+    const dirComp = components[key] = {
+      props: ['n'],
+      template: `<div v-foo="n">{{ n }}</div>`
+    }
+    const dirFoo = {}
+    dirFoo[hook] = function () {
+      throw new Error(key)
+    }
+    dirComp.directives = {
+      foo: dirFoo
     }
   })
 

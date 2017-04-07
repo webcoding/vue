@@ -1,17 +1,20 @@
 import Vue from 'vue'
+import { supportsPassive } from 'core/util/env'
 
 describe('Directive v-on', () => {
-  let vm, spy, spy2, el
+  let vm, spy, el
 
   beforeEach(() => {
+    vm = null
     spy = jasmine.createSpy()
-    spy2 = jasmine.createSpy()
     el = document.createElement('div')
     document.body.appendChild(el)
   })
 
   afterEach(() => {
-    document.body.removeChild(vm.$el)
+    if (vm) {
+      document.body.removeChild(vm.$el)
+    }
   })
 
   it('should bind event to a method', () => {
@@ -86,15 +89,17 @@ describe('Directive v-on', () => {
     vm = new Vue({
       el,
       template: `
-        <div @click="bar">
-          <div @click.stop="foo"></div>
-        </div>
+        <input type="checkbox" ref="input" @click.prevent="foo">
       `,
-      methods: { foo: spy, bar: spy2 }
+      methods: {
+        foo ($event) {
+          spy($event.defaultPrevented)
+        }
+      }
     })
-    triggerEvent(vm.$el.firstChild, 'click')
-    expect(spy).toHaveBeenCalled()
-    expect(spy2).not.toHaveBeenCalled()
+    vm.$refs.input.checked = false
+    triggerEvent(vm.$refs.input, 'click')
+    expect(spy).toHaveBeenCalledWith(true)
   })
 
   it('should support capture', () => {
@@ -525,5 +530,67 @@ describe('Directive v-on', () => {
     expect(spyRight.calls.count()).toBe(1)
     expect(spyUp.calls.count()).toBe(1)
     expect(spyDown.calls.count()).toBe(1)
+  })
+
+  // This test case should only run when the test browser supports passive.
+  if (supportsPassive) {
+    it('should support passive', () => {
+      vm = new Vue({
+        el,
+        template: `
+          <div>
+            <input type="checkbox" ref="normal" @click="foo"/>
+            <input type="checkbox" ref="passive" @click.passive="foo"/>
+            <input type="checkbox" ref="exclusive" @click.prevent.passive/>
+          </div>
+        `,
+        methods: {
+          foo (e) {
+            e.preventDefault()
+          }
+        }
+      })
+
+      vm.$refs.normal.checked = false
+      vm.$refs.passive.checked = false
+      vm.$refs.exclusive.checked = false
+      vm.$refs.normal.click()
+      vm.$refs.passive.click()
+      vm.$refs.exclusive.click()
+      expect(vm.$refs.normal.checked).toBe(false)
+      expect(vm.$refs.passive.checked).toBe(true)
+      expect(vm.$refs.exclusive.checked).toBe(true)
+      expect('passive and prevent can\'t be used together. Passive handler can\'t prevent default event.').toHaveBeenWarned()
+    })
+  }
+
+  // Github Issues #5146
+  it('should only prevent when match keycode', () => {
+    let prevented = false
+    vm = new Vue({
+      el,
+      template: `
+        <input ref="input" @keydown.enter.prevent="foo">
+      `,
+      methods: {
+        foo ($event) {
+          prevented = $event.defaultPrevented
+        }
+      }
+    })
+
+    triggerEvent(vm.$refs.input, 'keydown', e => { e.keyCode = 32 })
+    expect(prevented).toBe(false)
+    triggerEvent(vm.$refs.input, 'keydown', e => { e.keyCode = 13 })
+    expect(prevented).toBe(true)
+  })
+
+  it('should warn click.right', () => {
+    new Vue({
+      template: `<div @click.right="foo"></div>`,
+      methods: { foo () {} }
+    }).$mount()
+
+    expect(`Use "contextmenu" instead`).toHaveBeenWarned()
   })
 })
