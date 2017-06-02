@@ -3,6 +3,7 @@
 import { hasSymbol } from 'core/util/env'
 import { warn } from '../util/index'
 import { defineReactive } from '../observer/index'
+import { hasOwn } from 'shared/util'
 
 export function initProvide (vm: Component) {
   const provide = vm.$options.provide
@@ -17,6 +18,7 @@ export function initInjections (vm: Component) {
   const result = resolveInject(vm.$options.inject, vm)
   if (result) {
     Object.keys(result).forEach(key => {
+      /* istanbul ignore else */
       if (process.env.NODE_ENV !== 'production') {
         defineReactive(vm, key, result[key], () => {
           warn(
@@ -55,6 +57,9 @@ export function resolveInject (inject: any, vm: Component): ?Object {
           break
         }
         source = source.$parent
+      }
+      if (process.env.NODE_ENV !== 'production' && !hasOwn(result, key)) {
+        warn(`Injection "${key}" not found`, vm)
       }
     }
     return result

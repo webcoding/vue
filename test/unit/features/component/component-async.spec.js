@@ -173,7 +173,7 @@ describe('Component async', () => {
                 Promise.resolve().then(() => {
                   Vue.nextTick(next)
                 })
-              }, 5)
+              }, 50)
             }),
             loading: { template: `<div>loading</div>` },
             delay: 1
@@ -210,7 +210,7 @@ describe('Component async', () => {
                 Promise.resolve().then(() => {
                   Vue.nextTick(next)
                 })
-              }, 0)
+              }, 50)
             }),
             loading: { template: `<div>loading</div>` },
             delay: 0
@@ -238,7 +238,7 @@ describe('Component async', () => {
                 Promise.resolve().then(() => {
                   Vue.nextTick(next)
                 })
-              }, 0)
+              }, 50)
             }),
             loading: { template: `<div>loading</div>` },
             error: { template: `<div>error</div>` },
@@ -268,7 +268,7 @@ describe('Component async', () => {
                 Promise.resolve().then(() => {
                   Vue.nextTick(next)
                 })
-              }, 5)
+              }, 50)
             }),
             loading: { template: `<div>loading</div>` },
             error: { template: `<div>error</div>` },
@@ -291,6 +291,29 @@ describe('Component async', () => {
         expect(vm.$el.textContent).toBe('error') // late resolve ignored
         done()
       }
+    })
+
+    it('should not trigger timeout if resolved', done => {
+      const vm = new Vue({
+        template: `<div><test/></div>`,
+        components: {
+          test: () => ({
+            component: new Promise((resolve, reject) => {
+              setTimeout(() => {
+                resolve({ template: '<div>hi</div>' })
+              }, 10)
+            }),
+            error: { template: `<div>error</div>` },
+            timeout: 20
+          })
+        }
+      }).$mount()
+
+      setTimeout(() => {
+        expect(vm.$el.textContent).toBe('hi')
+        expect(`Failed to resolve async component`).not.toHaveBeenWarned()
+        done()
+      }, 30)
     })
   })
 })

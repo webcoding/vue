@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import { createEmptyVNode } from 'core/vdom/vnode'
 
 describe('Options functional', () => {
   it('should work', done => {
@@ -23,18 +24,25 @@ describe('Options functional', () => {
   })
 
   it('should expose all props when not declared', done => {
+    const fn = {
+      functional: true,
+      render (h, { props }) {
+        return h('div', `${props.msg} ${props.kebabMsg}`)
+      }
+    }
+
     const vm = new Vue({
       data: { test: 'foo' },
-      template: '<div><wrap :msg="test" kebab-msg="bar"></wrap></div>',
-      components: {
-        wrap: {
-          functional: true,
-          render (h, { props }) {
-            return h('div', `${props.msg} ${props.kebabMsg}`)
-          }
-        }
+      render (h) {
+        return h('div', [
+          h(fn, {
+            props: { msg: this.test },
+            attrs: { 'kebab-msg': 'bar' }
+          })
+        ])
       }
     }).$mount()
+
     expect(vm.$el.innerHTML).toBe('<div>foo bar</div>')
     vm.test = 'qux'
     waitForUpdate(() => {
@@ -159,5 +167,22 @@ describe('Options functional', () => {
       document.body.removeChild(vm.$el)
       vm.$destroy()
     }).then(done)
+  })
+
+  it('create empty vnode when render return null', () => {
+    const child = {
+      functional: true,
+      render () {
+        return null
+      }
+    }
+    const vm = new Vue({
+      components: {
+        child
+      }
+    })
+    const h = vm.$createElement
+    const vnode = h('child')
+    expect(vnode).toEqual(createEmptyVNode())
   })
 })

@@ -13,6 +13,7 @@ class Test extends Vue {
     this.$refs;
     this.$slots;
     this.$isServer;
+    this.$ssrContext;
   }
 
   // test property reification
@@ -78,6 +79,7 @@ class Test extends Vue {
     this.set({}, "", "");
     this.set([true, false, true], 1, true);
     this.delete({}, "");
+    this.delete([true, false], 0);
     this.directive("", {bind() {}});
     this.filter("", (value: number) => value);
     this.component("", { data: () => ({}) });

@@ -2,6 +2,7 @@
 /* globals MutationObserver */
 
 import { noop } from 'shared/util'
+import { handleError } from './error'
 
 // can we use __proto__?
 export const hasProto = '__proto__' in {}
@@ -21,8 +22,11 @@ if (inBrowser) {
   try {
     const opts = {}
     Object.defineProperty(opts, 'passive', ({
-      get: function () { supportsPassive = true }
-    } : Object)) // https://github.com/facebook/flow/issues/285
+      get () {
+        /* istanbul ignore next */
+        supportsPassive = true
+      }
+    }: Object)) // https://github.com/facebook/flow/issues/285
     window.addEventListener('test-passive', null, opts)
   } catch (e) {}
 }
@@ -120,15 +124,22 @@ export const nextTick = (function () {
   return function queueNextTick (cb?: Function, ctx?: Object) {
     let _resolve
     callbacks.push(() => {
-      if (cb) cb.call(ctx)
-      if (_resolve) _resolve(ctx)
+      if (cb) {
+        try {
+          cb.call(ctx)
+        } catch (e) {
+          handleError(e, ctx, 'nextTick')
+        }
+      } else if (_resolve) {
+        _resolve(ctx)
+      }
     })
     if (!pending) {
       pending = true
       timerFunc()
     }
     if (!cb && typeof Promise !== 'undefined') {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         _resolve = resolve
       })
     }
@@ -142,7 +153,7 @@ if (typeof Set !== 'undefined' && isNative(Set)) {
   _Set = Set
 } else {
   // a non-standard Set polyfill that only works with primitive keys.
-  _Set = class Set {
+  _Set = class Set implements ISet {
     set: Object;
     constructor () {
       this.set = Object.create(null)
@@ -159,4 +170,11 @@ if (typeof Set !== 'undefined' && isNative(Set)) {
   }
 }
 
+interface ISet {
+  has(key: string | number): boolean;
+  add(key: string | number): mixed;
+  clear(): void;
+}
+
 export { _Set }
+export type { ISet }
