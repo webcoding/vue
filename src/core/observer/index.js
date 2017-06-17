@@ -87,7 +87,7 @@ export class Observer {
  * Augment an target Object or Array by intercepting
  * the prototype chain using __proto__
  */
-function protoAugment (target, src: Object) {
+function protoAugment (target, src: Object, keys: any) {
   /* eslint-disable no-proto */
   target.__proto__ = src
   /* eslint-enable no-proto */
@@ -199,7 +199,7 @@ export function defineReactive (
  * already exist.
  */
 export function set (target: Array<any> | Object, key: any, val: any): any {
-  if (Array.isArray(target) && typeof key === 'number') {
+  if (Array.isArray(target) && (typeof key === 'number' || /^\d+$/.test(key))) {
     target.length = Math.max(target.length, key)
     target.splice(key, 1, val)
     return val

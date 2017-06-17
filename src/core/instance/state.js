@@ -20,7 +20,8 @@ import {
   isReserved,
   handleError,
   validateProp,
-  isPlainObject
+  isPlainObject,
+  isReservedAttribute
 } from '../util/index'
 
 const sharedPropertyDefinition = {
@@ -54,12 +55,6 @@ export function initState (vm: Component) {
   if (opts.watch) initWatch(vm, opts.watch)
 }
 
-const isReservedProp = {
-  key: 1,
-  ref: 1,
-  slot: 1
-}
-
 function checkOptionType (vm: Component, name: string) {
   const option = vm.$options[name]
   if (!isPlainObject(option)) {
@@ -90,7 +85,7 @@ function initProps (vm: Component, propsOptions: Object) {
     const value = validateProp(key, propsOptions, propsData, vm)
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
-      if (isReservedProp[key] || config.isReservedAttr(key)) {
+      if (isReservedAttribute(key) || config.isReservedAttr(key)) {
         warn(
           `"${key}" is a reserved attribute and cannot be used as component prop.`,
           vm
@@ -137,17 +132,26 @@ function initData (vm: Component) {
   // 将属性代理的vm上， 可以通过vm.xx访问到vm._data.xx
   const keys = Object.keys(data)
   const props = vm.$options.props
+  const methods = vm.$options.methods
   let i = keys.length
   while (i--) {
-    if (props && hasOwn(props, keys[i])) {
-      // 是props，则不代理
+    const key = keys[i]
+    if (process.env.NODE_ENV !== 'production') {
+      if (methods && hasOwn(methods, key)) {
+        warn(
+          `method "${key}" has already been defined as a data property.`,
+          vm
+        )
+      }
+    }
+    if (props && hasOwn(props, key)) {
       process.env.NODE_ENV !== 'production' && warn(
-        `The data property "${keys[i]}" is already declared as a prop. ` +
+        `The data property "${key}" is already declared as a prop. ` +
         `Use prop default value instead.`,
         vm
       )
-    } else if (!isReserved(keys[i])) {
-      proxy(vm, `_data`, keys[i])
+    } else if (!isReserved(key)) {
+      proxy(vm, `_data`, key)
     }
   }
   // observe data
