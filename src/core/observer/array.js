@@ -31,8 +31,6 @@ export const arrayMethods = Object.create(arrayProto)
     let inserted
     switch (method) {
       case 'push':
-        inserted = args
-        break
       case 'unshift':
         inserted = args
         break

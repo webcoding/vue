@@ -54,6 +54,8 @@ export interface ComponentOptions<V extends Vue> {
   name?: string;
   extends?: ComponentOptions<Vue> | typeof Vue;
   delimiters?: [string, string];
+  comments?: boolean;
+  inheritAttrs?: boolean;
 }
 
 export interface FunctionalComponentOptions {
