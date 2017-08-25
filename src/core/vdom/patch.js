@@ -597,13 +597,14 @@ export function createPatchFunction (backend) {
    *
    * @param {any} oldVnode  旧的虚拟节点或旧的真实dom节点
    * @param {any} vnode 新的虚拟节点
-   * @param {any} hydrating 是否要跟真是dom混合
+   * @param {any} hydrating 是否要跟真实dom混合
    * @param {any} removeOnly 特殊flag，用于`<transition-group>`组件
    * @param {any} parentElm 父节点
    * @param {any} refElm 新节点将插入到`refElm`之前
    * @returns
    */
   return function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
+    // 有老节点无新节点，即销毁老节点
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
       return
@@ -613,10 +614,14 @@ export function createPatchFunction (backend) {
     const insertedVnodeQueue = []
 
     if (isUndef(oldVnode)) {
+      // 无老节点，则创建新节点
       // empty mount (likely as component), create new root element
       isInitialPatch = true
       createElm(vnode, insertedVnodeQueue, parentElm, refElm)
     } else {
+      // 新老节点都存在，则继续判断
+      // 是否是同一个节点
+      // 是否要跟真实dom混合
       const isRealElement = isDef(oldVnode.nodeType)
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // patch existing root node
