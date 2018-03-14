@@ -197,8 +197,10 @@ function genConfig (name) {
     plugins: [
       replace({
         __WEEX__: !!opts.weex,
+        __MPVUE__: !!opts.mp,
         __WEEX_VERSION__: weexVersion,
-        __VERSION__: opts.mp ? mpVueVersion : version
+        __MPVUE_VERSION__: mpVueVersion,
+        __VERSION__: version
       }),
       flow(),
       buble(),

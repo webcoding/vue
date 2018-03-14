@@ -4144,7 +4144,8 @@ Object.defineProperty(Vue$3.prototype, '$ssrContext', {
   }
 });
 
-Vue$3.version = '1.0.1';
+Vue$3.version = '2.4.1';
+Vue$3.mpvueVersion = '1.0.3';
 
 /* globals renderer */
 
@@ -5023,7 +5024,6 @@ function initMP (mpType, next) {
       }
     });
   } else if (mpType === 'component') {
-    var app = global.getApp();
     global.Component({
       // 页面的初始数据
       data: {
@@ -5032,7 +5032,7 @@ function initMP (mpType, next) {
       methods: {
         handleProxy: function handleProxy (e) {
           rootVueVM.$handleProxyWithVue(e);
-        },
+        }
       },
       // mp lifecycle for vue
       // 组件生命周期函数，在组件实例进入页面节点树时执行，注意此时不能调用 setData
@@ -5068,7 +5068,7 @@ function initMP (mpType, next) {
       }
     });
   } else {
-    var app$1 = global.getApp();
+    var app = global.getApp();
     global.Page({
       // 页面的初始数据
       data: {
@@ -5085,7 +5085,7 @@ function initMP (mpType, next) {
         mp.page = this;
         mp.query = query;
         mp.status = 'load';
-        getGlobalData(app$1, rootVueVM);
+        getGlobalData(app, rootVueVM);
         callHook$1(rootVueVM, 'onLoad');
       },
 
