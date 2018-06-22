@@ -322,7 +322,11 @@ var LIFECYCLE_HOOKS = [
   'onReachBottom',
   'onShareAppMessage',
   'onPageScroll',
-  'onTabItemTap'
+  'onTabItemTap',
+  'attached',
+  'ready',
+  'moved',
+  'detached'
 ];
 
 /*  */
@@ -476,7 +480,6 @@ function handleError (err, vm, info) {
 }
 
 /*  */
-/* globals MutationObserver */
 
 // can we use __proto__?
 var hasProto = '__proto__' in {};
@@ -573,23 +576,23 @@ var nextTick = (function () {
       // "force" the microtask queue to be flushed by adding an empty timer.
       if (isIOS) { setTimeout(noop); }
     };
-  } else if (typeof MutationObserver !== 'undefined' && (
-    isNative(MutationObserver) ||
-    // PhantomJS and iOS 7.x
-    MutationObserver.toString() === '[object MutationObserverConstructor]'
-  )) {
-    // use MutationObserver where native Promise is not available,
-    // e.g. PhantomJS IE11, iOS7, Android 4.4
-    var counter = 1;
-    var observer = new MutationObserver(nextTickHandler);
-    var textNode = document.createTextNode(String(counter));
-    observer.observe(textNode, {
-      characterData: true
-    });
-    timerFunc = function () {
-      counter = (counter + 1) % 2;
-      textNode.data = String(counter);
-    };
+  // } else if (typeof MutationObserver !== 'undefined' && (
+  //   isNative(MutationObserver) ||
+  //   // PhantomJS and iOS 7.x
+  //   MutationObserver.toString() === '[object MutationObserverConstructor]'
+  // )) {
+  //   // use MutationObserver where native Promise is not available,
+  //   // e.g. PhantomJS IE11, iOS7, Android 4.4
+  //   var counter = 1
+  //   var observer = new MutationObserver(nextTickHandler)
+  //   var textNode = document.createTextNode(String(counter))
+  //   observer.observe(textNode, {
+  //     characterData: true
+  //   })
+  //   timerFunc = () => {
+  //     counter = (counter + 1) % 2
+  //     textNode.data = String(counter)
+  //   }
   } else {
     // fallback to setTimeout
     /* istanbul ignore next */
@@ -4145,7 +4148,7 @@ Object.defineProperty(Vue$3.prototype, '$ssrContext', {
 });
 
 Vue$3.version = '2.4.1';
-Vue$3.mpvueVersion = '1.0.3';
+Vue$3.mpvueVersion = '1.0.12';
 
 /* globals renderer */
 
@@ -4269,6 +4272,21 @@ var nodeOps = Object.freeze({
 });
 
 /*  */
+
+var ref = {
+  create: function create (_, vnode) {
+    registerRef(vnode);
+  },
+  update: function update (oldVnode, vnode) {
+    if (oldVnode.data.ref !== vnode.data.ref) {
+      registerRef(oldVnode, true);
+      registerRef(vnode);
+    }
+  },
+  destroy: function destroy (vnode) {
+    registerRef(vnode, true);
+  }
+};
 
 function registerRef (vnode, isRemoval) {
   var key = vnode.data.ref;
@@ -4914,8 +4932,9 @@ function createPatchFunction (backend) {
 // the directive module should be applied last, after all
 // built-in modules have been applied.
 // const modules = platformModules.concat(baseModules)
+var modules = [ref];
 
-var corePatch = createPatchFunction({ nodeOps: nodeOps, modules: [] });
+var corePatch = createPatchFunction({ nodeOps: nodeOps, modules: modules });
 
 function patch () {
   corePatch.apply(this, arguments);
@@ -4924,6 +4943,9 @@ function patch () {
 
 function callHook$1 (vm, hook, params) {
   var handlers = vm.$options[hook];
+  if (hook === 'onError' && handlers) {
+    handlers = [handlers];
+  }
 
   var ret;
   if (handlers) {
@@ -4954,6 +4976,124 @@ function getGlobalData (app, rootVueVM) {
   if (app && app.globalData) {
     mp.appOptions = app.globalData.appOptions;
   }
+}
+
+// 格式化 properties 属性，并给每个属性加上 observer 方法
+
+// properties 的 一些类型 https://developers.weixin.qq.com/miniprogram/dev/framework/custom-component/component.html
+// properties: {
+//   paramA: Number,
+//   myProperty: { // 属性名
+//     type: String, // 类型（必填），目前接受的类型包括：String, Number, Boolean, Object, Array, null（表示任意类型）
+//     value: '', // 属性初始值（可选），如果未指定则会根据类型选择一个
+//     observer: function(newVal, oldVal, changedPath) {
+//        // 属性被改变时执行的函数（可选），也可以写成在methods段中定义的方法名字符串, 如：'_propertyChange'
+//        // 通常 newVal 就是新设置的数据， oldVal 是旧数据
+//     }
+//   },
+// }
+
+// props 的一些类型 https://cn.vuejs.org/v2/guide/components-props.html#ad
+// props: {
+//   // 基础的类型检查 (`null` 匹配任何类型)
+//   propA: Number,
+//   // 多个可能的类型
+//   propB: [String, Number],
+//   // 必填的字符串
+//   propC: {
+//     type: String,
+//     required: true
+//   },
+//   // 带有默认值的数字
+//   propD: {
+//     type: Number,
+//     default: 100
+//   },
+//   // 带有默认值的对象
+//   propE: {
+//     type: Object,
+//     // 对象或数组且一定会从一个工厂函数返回默认值
+//     default: function () {
+//       return { message: 'hello' }
+//     }
+//   },
+//   // 自定义验证函数
+//   propF: {
+//     validator: function (value) {
+//       // 这个值必须匹配下列字符串中的一个
+//       return ['success', 'warning', 'danger'].indexOf(value) !== -1
+//     }
+//   }
+// }
+
+// core/util/options
+function normalizeProps$1 (props, res, vm) {
+  if (!props) { return }
+  var i, val, name;
+  if (Array.isArray(props)) {
+    i = props.length;
+    while (i--) {
+      val = props[i];
+      if (typeof val === 'string') {
+        name = camelize(val);
+        res[name] = { type: null };
+      } else {}
+    }
+  } else if (isPlainObject(props)) {
+    for (var key in props) {
+      val = props[key];
+      name = camelize(key);
+      res[name] = isPlainObject(val)
+        ? val
+        : { type: val };
+    }
+  }
+
+  // fix vueProps to properties
+  for (var key$1 in res) {
+    if (res.hasOwnProperty(key$1)) {
+      var item = res[key$1];
+      if (item.default) {
+        item.value = item.default;
+      }
+      var oldObserver = item.observer;
+      item.observer = function (newVal, oldVal) {
+        vm[name] = newVal;
+        // 先修改值再触发原始的 observer，跟 watch 行为保持一致
+        if (typeof oldObserver === 'function') {
+          oldObserver.call(vm, newVal, oldVal);
+        }
+      };
+    }
+  }
+
+  return res
+}
+
+function normalizeProperties (vm) {
+  var properties = vm.$options.properties;
+  var vueProps = vm.$options.props;
+  var res = {};
+
+  normalizeProps$1(properties, res, vm);
+  normalizeProps$1(vueProps, res, vm);
+
+  return res
+}
+
+/**
+ * 把 properties 中的属性 proxy 到 vm 上
+ */
+function initMpProps (vm) {
+  var mpProps = vm._mpProps = {};
+  var keys = Object.keys(vm.$options.properties || {});
+  keys.forEach(function (key) {
+    if (!(key in vm)) {
+      proxy(vm, '_mpProps', key);
+      mpProps[key] = undefined; // for observe
+    }
+  });
+  observe(mpProps, true);
 }
 
 function initMP (mpType, next) {
@@ -4989,7 +5129,7 @@ function initMP (mpType, next) {
       },
 
       handleProxy: function handleProxy (e) {
-        rootVueVM.$handleProxyWithVue(e);
+        return rootVueVM.$handleProxyWithVue(e)
       },
 
       // Do something initial when launch.
@@ -4999,8 +5139,7 @@ function initMP (mpType, next) {
         mp.app = this;
         mp.status = 'launch';
         this.globalData.appOptions = mp.appOptions = options;
-
-        callHook$1(rootVueVM, 'onLaunch');
+        callHook$1(rootVueVM, 'onLaunch', options);
         next();
       },
 
@@ -5010,7 +5149,7 @@ function initMP (mpType, next) {
 
         mp.status = 'show';
         this.globalData.appOptions = mp.appOptions = options;
-        callHook$1(rootVueVM, 'onShow');
+        callHook$1(rootVueVM, 'onShow', options);
       },
 
       // Do something when app hide.
@@ -5024,14 +5163,18 @@ function initMP (mpType, next) {
       }
     });
   } else if (mpType === 'component') {
+    initMpProps(rootVueVM);
+
     global.Component({
+      // 小程序原生的组件属性
+      properties: normalizeProperties(rootVueVM),
       // 页面的初始数据
       data: {
         $root: {}
       },
       methods: {
         handleProxy: function handleProxy (e) {
-          rootVueVM.$handleProxyWithVue(e);
+          return rootVueVM.$handleProxyWithVue(e)
         }
       },
       // mp lifecycle for vue
@@ -5049,7 +5192,7 @@ function initMP (mpType, next) {
       ready: function ready () {
         mp.status = 'ready';
 
-        callHook$1(rootVueVM, 'onReady');
+        callHook$1(rootVueVM, 'ready');
         next();
 
         // 只有页面需要 setData
@@ -5076,7 +5219,7 @@ function initMP (mpType, next) {
       },
 
       handleProxy: function handleProxy (e) {
-        rootVueVM.$handleProxyWithVue(e);
+        return rootVueVM.$handleProxyWithVue(e)
       },
 
       // mp lifecycle for vue
@@ -5086,13 +5229,19 @@ function initMP (mpType, next) {
         mp.query = query;
         mp.status = 'load';
         getGlobalData(app, rootVueVM);
-        callHook$1(rootVueVM, 'onLoad');
+        callHook$1(rootVueVM, 'onLoad', query);
       },
 
       // 生命周期函数--监听页面显示
       onShow: function onShow () {
+        mp.page = this;
         mp.status = 'show';
         callHook$1(rootVueVM, 'onShow');
+
+        // 只有页面需要 setData
+        rootVueVM.$nextTick(function () {
+          rootVueVM._initDataToMP();
+        });
       },
 
       // 生命周期函数--监听页面初次渲染完成
@@ -5101,23 +5250,20 @@ function initMP (mpType, next) {
 
         callHook$1(rootVueVM, 'onReady');
         next();
-
-        // 只有页面需要 setData
-        rootVueVM.$nextTick(function () {
-          rootVueVM._initDataToMP();
-        });
       },
 
       // 生命周期函数--监听页面隐藏
       onHide: function onHide () {
         mp.status = 'hide';
         callHook$1(rootVueVM, 'onHide');
+        mp.page = null;
       },
 
       // 生命周期函数--监听页面卸载
       onUnload: function onUnload () {
         mp.status = 'unload';
         callHook$1(rootVueVM, 'onUnload');
+        mp.page = null;
       },
 
       // 页面相关事件处理函数--监听用户下拉动作
@@ -5131,9 +5277,8 @@ function initMP (mpType, next) {
       },
 
       // 用户点击右上角分享
-      onShareAppMessage: function onShareAppMessage (options) {
-        return callHook$1(rootVueVM, 'onShareAppMessage', options)
-      },
+      onShareAppMessage: rootVueVM.$options.onShareAppMessage
+        ? function (options) { return callHook$1(rootVueVM, 'onShareAppMessage', options); } : null,
 
       // Do something when page scroll
       onPageScroll: function onPageScroll (options) {
@@ -5173,6 +5318,7 @@ function getVmData (vm) {
   var dataKeys = [].concat(
     Object.keys(vm._data || {}),
     Object.keys(vm._props || {}),
+    Object.keys(vm._mpProps || {}),
     Object.keys(vm._computedWatchers || {})
   );
   return dataKeys.reduce(function (res, key) {
@@ -5337,7 +5483,20 @@ function getHandle (vnode, eventid, eventTypes) {
   var children = ref.children; if ( children === void 0 ) children = [];
   var componentInstance = ref.componentInstance;
   if (componentInstance) {
-    return res
+    // 增加 slot 情况的处理
+    // Object.values 会多增加几行编译后的代码
+    Object.keys(componentInstance.$slots).forEach(function (slotKey) {
+      var slot = componentInstance.$slots[slotKey];
+      var slots = Array.isArray(slot) ? slot : [slot];
+      slots.forEach(function (node) {
+        res = res.concat(getHandle(node, eventid, eventTypes));
+      });
+    });
+  } else {
+    // 避免遍历超出当前组件的 vm
+    children.forEach(function (node) {
+      res = res.concat(getHandle(node, eventid, eventTypes));
+    });
   }
 
   var attrs = data.attrs;
@@ -5353,10 +5512,6 @@ function getHandle (vnode, eventid, eventTypes) {
     });
     return res
   }
-
-  children.forEach(function (node) {
-    res = res.concat(getHandle(node, eventid, eventTypes));
-  });
 
   return res
 }
@@ -5384,6 +5539,7 @@ function getWebEventByMP (e) {
 
   if (touches && touches.length) {
     Object.assign(event, touches[0]);
+    event.touches = touches;
   }
   return event
 }
@@ -5392,7 +5548,7 @@ function handleProxyWithVue (e) {
   var rootVueVM = this.$root;
   var type = e.type;
   var target = e.target; if ( target === void 0 ) target = {};
-  var currentTarget = e.currentTarget; if ( currentTarget === void 0 ) currentTarget = {};
+  var currentTarget = e.currentTarget;
   var ref = currentTarget || target;
   var dataset = ref.dataset; if ( dataset === void 0 ) dataset = {};
   var comkey = dataset.comkey; if ( comkey === void 0 ) comkey = '';
@@ -5410,6 +5566,10 @@ function handleProxyWithVue (e) {
   // https://developer.mozilla.org/zh-CN/docs/Web/API/Event
   if (handles.length) {
     var event = getWebEventByMP(e);
+    if (handles.length === 1) {
+      var result = handles[0](event);
+      return result
+    }
     handles.forEach(function (h) { return h(event); });
   }
 }

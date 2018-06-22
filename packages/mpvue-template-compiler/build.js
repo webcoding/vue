@@ -1109,7 +1109,11 @@ var LIFECYCLE_HOOKS = [
   'onReachBottom',
   'onShareAppMessage',
   'onPageScroll',
-  'onTabItemTap'
+  'onTabItemTap',
+  'attached',
+  'ready',
+  'moved',
+  'detached'
 ];
 
 /*  */
@@ -1676,7 +1680,6 @@ function handleError (err, vm, info) {
 }
 
 /*  */
-/* globals MutationObserver */
 
 // can we use __proto__?
 var hasProto = '__proto__' in {};
@@ -1773,23 +1776,23 @@ var nextTick = (function () {
       // "force" the microtask queue to be flushed by adding an empty timer.
       if (isIOS) { setTimeout(noop); }
     };
-  } else if (typeof MutationObserver !== 'undefined' && (
-    isNative(MutationObserver) ||
-    // PhantomJS and iOS 7.x
-    MutationObserver.toString() === '[object MutationObserverConstructor]'
-  )) {
-    // use MutationObserver where native Promise is not available,
-    // e.g. PhantomJS IE11, iOS7, Android 4.4
-    var counter = 1;
-    var observer = new MutationObserver(nextTickHandler);
-    var textNode = document.createTextNode(String(counter));
-    observer.observe(textNode, {
-      characterData: true
-    });
-    timerFunc = function () {
-      counter = (counter + 1) % 2;
-      textNode.data = String(counter);
-    };
+  // } else if (typeof MutationObserver !== 'undefined' && (
+  //   isNative(MutationObserver) ||
+  //   // PhantomJS and iOS 7.x
+  //   MutationObserver.toString() === '[object MutationObserverConstructor]'
+  // )) {
+  //   // use MutationObserver where native Promise is not available,
+  //   // e.g. PhantomJS IE11, iOS7, Android 4.4
+  //   var counter = 1
+  //   var observer = new MutationObserver(nextTickHandler)
+  //   var textNode = document.createTextNode(String(counter))
+  //   observer.observe(textNode, {
+  //     characterData: true
+  //   })
+  //   timerFunc = () => {
+  //     counter = (counter + 1) % 2
+  //     textNode.data = String(counter)
+  //   }
   } else {
     // fallback to setTimeout
     /* istanbul ignore next */
@@ -4094,10 +4097,10 @@ function getWxEleId (index, arr) {
 }
 
 // 检查不允许在 v-for 的时候出现2个及其以上相同 iterator1
-function checkRepeatIterator (arr) {
+function checkRepeatIterator (arr, options) {
   var len = arr.length;
   if (len > 1 && len !== new Set(arr).size) {
-    console.log('\n', '\x1b[31m', 'error: ', '嵌套的 v-for 不能连续使用相同的 iterator:', arr);
+    options.warn(("同一组件内嵌套的 v-for 不能连续使用相同的索引，目前为: " + arr), false);
   }
 }
 
@@ -4128,7 +4131,7 @@ function addAttr$1 (path, key, value, inVdom) {
   path.attrs.push({ name: key, value: value });
 }
 
-function mark (path, deps, iteratorArr) {
+function mark (path, options, deps, iteratorArr) {
   if ( iteratorArr === void 0 ) iteratorArr = [];
 
   fixDefaultIterator(path);
@@ -4146,21 +4149,20 @@ function mark (path, deps, iteratorArr) {
     currentArr.push(iterator1);
   }
 
-  checkRepeatIterator(currentArr);
+  checkRepeatIterator(currentArr, options);
 
   // 递归子节点
   if (children && children.length) {
     children.forEach(function (v, i) {
       // const counterIterator = children.slice(0, i).filter(v => v.for).map(v => v.for + '.length').join(`+'-'+`)
-      mark(v, deps, currentArr);
+      mark(v, options, deps, currentArr);
     });
   }
 
   // fix: v-else events
-  if (ifConditions && ifConditions.length && !ifConditions._handled) {
-    ifConditions._handled = true;
-    ifConditions.forEach(function (v, i) {
-      mark(v.block, deps, currentArr);
+  if (ifConditions && ifConditions.length > 1) {
+    ifConditions.slice(1).forEach(function (v, i) {
+      mark(v.block, options, deps, currentArr);
     });
   }
 
@@ -4192,9 +4194,9 @@ function mark (path, deps, iteratorArr) {
 
 // 全局的事件触发器 ID
 // let eIndex = 0
-function markComponent (ast) {
+function markComponent (ast, options) {
   var deps = { comIndex: 0, eventIndex: 0 };
-  mark(ast, deps);
+  mark(ast, options, deps);
 
   return ast
 }
@@ -4210,7 +4212,7 @@ var createCompiler = createCompilerCreator(function baseCompile (
   options
 ) {
   var originAst = parse(template$$1.trim(), options);
-  var ast = markComponent(originAst);
+  var ast = markComponent(originAst, options);
   optimize(ast, options);
   var code = generate$1(ast, options);
   return {
@@ -4252,7 +4254,10 @@ var wxmlDirectiveMap = {
     name: '',
     type: 1
   },
-  'v-html': noSupport,
+  'v-html': {
+    name: '',
+    type: 1
+  },
   'v-on': {
     name: '',
     map: {
@@ -4336,7 +4341,7 @@ var objectToStringVisitor = {
       var key = keyStr ? hyphenate(keyStr) : keyStr;
       var ref = generate(t.ExpressionStatement(propertyItem.value));
       var val = ref.code;
-      return ("'" + key + ":' + " + (val.slice(0, -1)) + " + ';'")
+      return ("'" + key + ":' + (" + (val.slice(0, -1)) + ") + ';'")
     }).join('+');
 
     var p = template(expression)({});
@@ -4353,7 +4358,7 @@ function transformDynamicClass (staticClass, clsBinding) {
   var result = babel.transform(("!" + clsBinding), { plugins: [transformObjectToTernaryOperator] });
   // 先实现功能，再优化代码
   // https://github.com/babel/babel/issues/7138
-  var cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(1).slice(0, -1);
+  var cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(1).slice(0, -1).replace(/\n|\r/g, '');
   return (staticClass + " {{" + cls + "}}")
 }
 
@@ -4361,7 +4366,7 @@ function transformDynamicStyle (staticStyle, styleBinding) {
   if ( staticStyle === void 0 ) staticStyle = '';
 
   var result = babel.transform(("!" + styleBinding), { plugins: [transformObjectToString] });
-  var cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(2).slice(0, -2);
+  var cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(1).slice(0, -1).replace(/\n|\r/g, '');
   return (staticStyle + " {{" + cls + "}}")
 }
 
@@ -4401,6 +4406,9 @@ var attrs = {
           text: ("{{" + val + "}}"),
           type: 3
         });
+      } else if (key === 'v-html') {
+        ast.tag = 'rich-text';
+        attrs['nodes'] = "{{" + val + "}}";
       } else if (key === 'v-show') {
         attrs['hidden'] = "{{!(" + val + ")}}";
       } else if (/^v\-on\:/i.test(key)) {
@@ -4474,7 +4482,15 @@ var attrs = {
       wxmlEventName = eventMap.map[eventName];
     }
 
-    wxmlEventName = (eventNameMap.includes('stop') ? 'catch' : 'bind') + (wxmlEventName || eventName);
+    var eventType = 'bind';
+    var isStop = eventNameMap.includes('stop');
+    if (eventNameMap.includes('capture')) {
+      eventType = isStop ? 'capture-catch:' : 'capture-bind:';
+    } else if (isStop) {
+      eventType = 'catch';
+    }
+
+    wxmlEventName = eventType + (wxmlEventName || eventName);
     attrs[wxmlEventName] = 'handleProxy';
 
     return attrs
@@ -4568,7 +4584,7 @@ var component = {
     var mpcomid = ast.mpcomid;
     var slots = ast.slots;
     if (slotName) {
-      attrsMap['data'] = "{{...$root[$p], $root}}";
+      attrsMap['data'] = "{{...$root[$k], $root}}";
       attrsMap['is'] = "{{" + slotName + "}}";
     } else {
       var slotsName = getSlotsName(slots);
@@ -4808,7 +4824,7 @@ function generate$2 (obj, options) {
   var attrs = Object.keys(attrsMap).map(function (k) { return convertAttr(k, attrsMap[k]); }).join(' ');
 
   var tags = ['progress', 'checkbox', 'switch', 'input', 'radio', 'slider', 'textarea'];
-  if (tags.indexOf(tag) > -1) {
+  if (tags.indexOf(tag) > -1 && !(children && children.length)) {
     return ("<" + tag + (attrs ? ' ' + attrs : '') + " />" + (ifConditionsArr.join('')))
   }
   return ("<" + tag + (attrs ? ' ' + attrs : '') + ">" + (child || '') + "</" + tag + ">" + (ifConditionsArr.join('')))
@@ -4864,7 +4880,8 @@ function compileToWxml (compiled, options) {
     slot.code = generate$2(slot.node, options);
   });
 
-  return { code: code, compiled: compiled, slots: slots }
+  // TODO: 后期优化掉这种暴力全部 import，虽然对性能没啥大影响
+  return { code: code, compiled: compiled, slots: slots, importCode: importCode }
 }
 
 /*  */

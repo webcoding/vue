@@ -9,13 +9,13 @@ function transformDynamicClass (staticClass = '', clsBinding) {
   const result = babel.transform(`!${clsBinding}`, { plugins: [transformObjectToTernaryOperator] })
   // 先实现功能，再优化代码
   // https://github.com/babel/babel/issues/7138
-  const cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(1).slice(0, -1)
+  const cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(1).slice(0, -1).replace(/\n|\r/g, '')
   return `${staticClass} {{${cls}}}`
 }
 
 function transformDynamicStyle (staticStyle = '', styleBinding) {
   const result = babel.transform(`!${styleBinding}`, { plugins: [transformObjectToString] })
-  const cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(2).slice(0, -2)
+  const cls = prettier.format(result.code, { semi: false, singleQuote: true }).slice(1).slice(0, -1).replace(/\n|\r/g, '')
   return `${staticStyle} {{${cls}}}`
 }
 
@@ -49,6 +49,9 @@ export default {
           text: `{{${val}}}`,
           type: 3
         })
+      } else if (key === 'v-html') {
+        ast.tag = 'rich-text'
+        attrs['nodes'] = `{{${val}}}`
       } else if (key === 'v-show') {
         attrs['hidden'] = `{{!(${val})}}`
       } else if (/^v\-on\:/i.test(key)) {
@@ -115,7 +118,15 @@ export default {
       wxmlEventName = eventMap.map[eventName]
     }
 
-    wxmlEventName = (eventNameMap.includes('stop') ? 'catch' : 'bind') + (wxmlEventName || eventName)
+    let eventType = 'bind'
+    const isStop = eventNameMap.includes('stop')
+    if (eventNameMap.includes('capture')) {
+      eventType = isStop ? 'capture-catch:' : 'capture-bind:'
+    } else if (isStop) {
+      eventType = 'catch'
+    }
+
+    wxmlEventName = eventType + (wxmlEventName || eventName)
     attrs[wxmlEventName] = 'handleProxy'
 
     return attrs
