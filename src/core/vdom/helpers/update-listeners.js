@@ -74,6 +74,7 @@ export function updateListeners (
       on[name] = old
     }
   }
+  // 删除已经无用的listenrs
   for (name in oldOn) {
     if (isUndef(on[name])) {
       event = normalizeEvent(name)

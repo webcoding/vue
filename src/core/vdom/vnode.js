@@ -1,5 +1,6 @@
 /* @flow */
 
+// 解析 https://www.cnblogs.com/answershuto/p/7502452.html
 export default class VNode {
   tag: string | void;
   data: VNodeData | void;

@@ -5,7 +5,9 @@
 
 import { def } from '../util/index'
 
+// 数组原型
 const arrayProto = Array.prototype
+// 我们想要插入原型链的对象
 export const arrayMethods = Object.create(arrayProto)
 
 const methodsToPatch = [
@@ -37,6 +39,8 @@ methodsToPatch.forEach(function (method) {
         inserted = args.slice(2)
         break
     }
+
+    // 得到新添加的成员，并转换为监控对象
     if (inserted) ob.observeArray(inserted)
     // notify change
     ob.dep.notify()
