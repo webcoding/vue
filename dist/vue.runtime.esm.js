@@ -1,5 +1,5 @@
 /*!
- * Vue.js v2.5.15
+ * Vue.js v2.5.17-beta.0
  * (c) 2014-2018 Evan You
  * Released under the MIT License.
  */
@@ -791,6 +791,7 @@ function cloneVNode (vnode) {
   cloned.fnContext = vnode.fnContext;
   cloned.fnOptions = vnode.fnOptions;
   cloned.fnScopeId = vnode.fnScopeId;
+  cloned.asyncMeta = vnode.asyncMeta;
   cloned.isCloned = true;
   return cloned
 }
@@ -969,10 +970,10 @@ function defineReactive (
 
   // cater for pre-defined getter/setters
   var getter = property && property.get;
-  if (!getter && arguments.length === 2) {
+  var setter = property && property.set;
+  if ((!getter || setter) && arguments.length === 2) {
     val = obj[key];
   }
-  var setter = property && property.set;
 
   var childOb = !shallow && observe(val);
   Object.defineProperty(obj, key, {
@@ -1019,10 +1020,9 @@ function defineReactive (
  */
 function set (target, key, val) {
   if (process.env.NODE_ENV !== 'production' &&
-    !Array.isArray(target) &&
-    !isObject(target)
+    (isUndef(target) || isPrimitive(target))
   ) {
-    warn(("Cannot set reactive property on non-object/array value: " + target));
+    warn(("Cannot set reactive property on undefined, null, or primitive value: " + ((target))));
   }
   if (Array.isArray(target) && isValidArrayIndex(key)) {
     target.length = Math.max(target.length, key);
@@ -1055,10 +1055,9 @@ function set (target, key, val) {
  */
 function del (target, key) {
   if (process.env.NODE_ENV !== 'production' &&
-    !Array.isArray(target) &&
-    !isObject(target)
+    (isUndef(target) || isPrimitive(target))
   ) {
-    warn(("Cannot delete reactive property on non-object/array value: " + target));
+    warn(("Cannot delete reactive property on undefined, null, or primitive value: " + ((target))));
   }
   if (Array.isArray(target) && isValidArrayIndex(key)) {
     target.splice(key, 1);
@@ -1902,7 +1901,7 @@ if (process.env.NODE_ENV !== 'production') {
   var hasHandler = {
     has: function has (target, key) {
       var has = key in target;
-      var isAllowed = allowedGlobals(key) || key.charAt(0) === '_';
+      var isAllowed = allowedGlobals(key) || (typeof key === 'string' && key.charAt(0) === '_');
       if (!has && !isAllowed) {
         warnNonPresent(target, key);
       }
@@ -2643,9 +2642,6 @@ function initLifecycle (vm) {
 function lifecycleMixin (Vue) {
   Vue.prototype._update = function (vnode, hydrating) {
     var vm = this;
-    if (vm._isMounted) {
-      callHook(vm, 'beforeUpdate');
-    }
     var prevEl = vm.$el;
     var prevVnode = vm._vnode;
     var prevActiveInstance = activeInstance;
@@ -2655,14 +2651,7 @@ function lifecycleMixin (Vue) {
     // based on the rendering backend used.
     if (!prevVnode) {
       // initial render
-      vm.$el = vm.__patch__(
-        vm.$el, vnode, hydrating, false /* removeOnly */,
-        vm.$options._parentElm,
-        vm.$options._refElm
-      );
-      // no need for the ref nodes after initial patch
-      // this prevents keeping a detached DOM tree in memory (#5851)
-      vm.$options._parentElm = vm.$options._refElm = null;
+      vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
     } else {
       // updates
       vm.$el = vm.__patch__(prevVnode, vnode);
@@ -2790,7 +2779,13 @@ function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
-  new Watcher(vm, updateComponent, noop, null, true /* isRenderWatcher */);
+  new Watcher(vm, updateComponent, noop, {
+    before: function before () {
+      if (vm._isMounted) {
+        callHook(vm, 'beforeUpdate');
+      }
+    }
+  }, true /* isRenderWatcher */);
   hydrating = false;
 
   // manually mounted instance, call mounted on self
@@ -2974,6 +2969,9 @@ function flushSchedulerQueue () {
   // as we run existing watchers
   for (index = 0; index < queue.length; index++) {
     watcher = queue[index];
+    if (watcher.before) {
+      watcher.before();
+    }
     id = watcher.id;
     has[id] = null;
     watcher.run();
@@ -3093,15 +3091,16 @@ var Watcher = function Watcher (
   if (options) {
     this.deep = !!options.deep;
     this.user = !!options.user;
-    this.lazy = !!options.lazy;
+    this.computed = !!options.computed;
     this.sync = !!options.sync;
+    this.before = options.before;
   } else {
-    this.deep = this.user = this.lazy = this.sync = false;
+    this.deep = this.user = this.computed = this.sync = false;
   }
   this.cb = cb;
   this.id = ++uid$1; // uid for batching
   this.active = true;
-  this.dirty = this.lazy; // for lazy watchers
+  this.dirty = this.computed; // for computed watchers
   this.deps = [];
   this.newDeps = [];
   this.depIds = new _Set();
@@ -3124,9 +3123,12 @@ var Watcher = function Watcher (
       );
     }
   }
-  this.value = this.lazy
-    ? undefined
-    : this.get();
+  if (this.computed) {
+    this.value = undefined;
+    this.dep = new Dep();
+  } else {
+    this.value = this.get();
+  }
 };
 
 /**
@@ -3198,9 +3200,27 @@ Watcher.prototype.cleanupDeps = function cleanupDeps () {
  * Will be called when a dependency changes.
  */
 Watcher.prototype.update = function update () {
+    var this$1 = this;
+
   /* istanbul ignore else */
-  if (this.lazy) {
-    this.dirty = true;
+  if (this.computed) {
+    // A computed property watcher has two modes: lazy and activated.
+    // It initializes as lazy by default, and only becomes activated when
+    // it is depended on by at least one subscriber, which is typically
+    // another computed property or a component's render function.
+    if (this.dep.subs.length === 0) {
+      // In lazy mode, we don't want to perform computations until necessary,
+      // so we simply mark the watcher as dirty. The actual computation is
+      // performed just-in-time in this.evaluate() when the computed property
+      // is accessed.
+      this.dirty = true;
+    } else {
+      // In activated mode, we want to proactively perform the computation
+      // but only notify our subscribers when the value has indeed changed.
+      this.getAndInvoke(function () {
+        this$1.dep.notify();
+      });
+    }
   } else if (this.sync) {
     this.run();
   } else {
@@ -3214,49 +3234,54 @@ Watcher.prototype.update = function update () {
  */
 Watcher.prototype.run = function run () {
   if (this.active) {
-    var value = this.get();
-    if (
-      value !== this.value ||
-      // Deep watchers and watchers on Object/Arrays should fire even
-      // when the value is the same, because the value may
-      // have mutated.
-      isObject(value) ||
-      this.deep
-    ) {
-      // set new value
-      var oldValue = this.value;
-      this.value = value;
-      if (this.user) {
-        try {
-          this.cb.call(this.vm, value, oldValue);
-        } catch (e) {
-          handleError(e, this.vm, ("callback for watcher \"" + (this.expression) + "\""));
-        }
-      } else {
-        this.cb.call(this.vm, value, oldValue);
+    this.getAndInvoke(this.cb);
+  }
+};
+
+Watcher.prototype.getAndInvoke = function getAndInvoke (cb) {
+  var value = this.get();
+  if (
+    value !== this.value ||
+    // Deep watchers and watchers on Object/Arrays should fire even
+    // when the value is the same, because the value may
+    // have mutated.
+    isObject(value) ||
+    this.deep
+  ) {
+    // set new value
+    var oldValue = this.value;
+    this.value = value;
+    this.dirty = false;
+    if (this.user) {
+      try {
+        cb.call(this.vm, value, oldValue);
+      } catch (e) {
+        handleError(e, this.vm, ("callback for watcher \"" + (this.expression) + "\""));
       }
+    } else {
+      cb.call(this.vm, value, oldValue);
     }
   }
 };
 
 /**
- * Evaluate the value of the watcher.
- * This only gets called for lazy watchers.
+ * Evaluate and return the value of the watcher.
+ * This only gets called for computed property watchers.
  */
 Watcher.prototype.evaluate = function evaluate () {
-  this.value = this.get();
-  this.dirty = false;
+  if (this.dirty) {
+    this.value = this.get();
+    this.dirty = false;
+  }
+  return this.value
 };
 
 /**
- * Depend on all deps collected by this watcher.
+ * Depend on this watcher. Only for computed property watchers.
  */
 Watcher.prototype.depend = function depend () {
-    var this$1 = this;
-
-  var i = this.deps.length;
-  while (i--) {
-    this$1.deps[i].depend();
+  if (this.dep && Dep.target) {
+    this.dep.depend();
   }
 };
 
@@ -3421,7 +3446,7 @@ function getData (data, vm) {
   }
 }
 
-var computedWatcherOptions = { lazy: true };
+var computedWatcherOptions = { computed: true };
 
 function initComputed (vm, computed) {
   // $flow-disable-line
@@ -3501,13 +3526,8 @@ function createComputedGetter (key) {
   return function computedGetter () {
     var watcher = this._computedWatchers && this._computedWatchers[key];
     if (watcher) {
-      if (watcher.dirty) {
-        watcher.evaluate();
-      }
-      if (Dep.target) {
-        watcher.depend();
-      }
-      return watcher.value
+      watcher.depend();
+      return watcher.evaluate()
     }
   }
 }
@@ -3977,6 +3997,24 @@ function FunctionalRenderContext (
   Ctor
 ) {
   var options = Ctor.options;
+  // ensure the createElement function in functional components
+  // gets a unique context - this is necessary for correct named slot check
+  var contextVm;
+  if (hasOwn(parent, '_uid')) {
+    contextVm = Object.create(parent);
+    // $flow-disable-line
+    contextVm._original = parent;
+  } else {
+    // the context vm passed in is a functional context as well.
+    // in this case we want to make sure we are able to get a hold to the
+    // real context instance.
+    contextVm = parent;
+    // $flow-disable-line
+    parent = parent._original;
+  }
+  var isCompiled = isTrue(options._compiled);
+  var needNormalization = !isCompiled;
+
   this.data = data;
   this.props = props;
   this.children = children;
@@ -3984,12 +4022,6 @@ function FunctionalRenderContext (
   this.listeners = data.on || emptyObject;
   this.injections = resolveInject(options.inject, parent);
   this.slots = function () { return resolveSlots(children, parent); };
-
-  // ensure the createElement function in functional components
-  // gets a unique context - this is necessary for correct named slot check
-  var contextVm = Object.create(parent);
-  var isCompiled = isTrue(options._compiled);
-  var needNormalization = !isCompiled;
 
   // support for compiled functional template
   if (isCompiled) {
@@ -4046,23 +4078,28 @@ function createFunctionalComponent (
   var vnode = options.render.call(null, renderContext._c, renderContext);
 
   if (vnode instanceof VNode) {
-    setFunctionalContextForVNode(vnode, data, contextVm, options);
-    return vnode
+    return cloneAndMarkFunctionalResult(vnode, data, renderContext.parent, options)
   } else if (Array.isArray(vnode)) {
     var vnodes = normalizeChildren(vnode) || [];
+    var res = new Array(vnodes.length);
     for (var i = 0; i < vnodes.length; i++) {
-      setFunctionalContextForVNode(vnodes[i], data, contextVm, options);
+      res[i] = cloneAndMarkFunctionalResult(vnodes[i], data, renderContext.parent, options);
     }
-    return vnodes
+    return res
   }
 }
 
-function setFunctionalContextForVNode (vnode, data, vm, options) {
-  vnode.fnContext = vm;
-  vnode.fnOptions = options;
+function cloneAndMarkFunctionalResult (vnode, data, contextVm, options) {
+  // #7817 clone node before setting fnContext, otherwise if the node is reused
+  // (e.g. it was from a cached normal slot) the fnContext causes named slots
+  // that should not be matched to match.
+  var clone = cloneVNode(vnode);
+  clone.fnContext = contextVm;
+  clone.fnOptions = options;
   if (data.slot) {
-    (vnode.data || (vnode.data = {})).slot = data.slot;
+    (clone.data || (clone.data = {})).slot = data.slot;
   }
+  return clone
 }
 
 function mergeProps (to, from) {
@@ -4092,14 +4129,9 @@ function mergeProps (to, from) {
 
 /*  */
 
-// hooks to be invoked on component VNodes during patch
+// inline hooks to be invoked on component VNodes during patch
 var componentVNodeHooks = {
-  init: function init (
-    vnode,
-    hydrating,
-    parentElm,
-    refElm
-  ) {
+  init: function init (vnode, hydrating) {
     if (
       vnode.componentInstance &&
       !vnode.componentInstance._isDestroyed &&
@@ -4111,9 +4143,7 @@ var componentVNodeHooks = {
     } else {
       var child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
-        activeInstance,
-        parentElm,
-        refElm
+        activeInstance
       );
       child.$mount(hydrating ? vnode.elm : undefined, hydrating);
     }
@@ -4250,8 +4280,8 @@ function createComponent (
     }
   }
 
-  // merge component management hooks onto the placeholder node
-  mergeHooks(data);
+  // install component management hooks onto the placeholder node
+  installComponentHooks(data);
 
   // return a placeholder vnode
   var name = Ctor.options.name || tag;
@@ -4271,16 +4301,12 @@ function createComponent (
 
 function createComponentInstanceForVnode (
   vnode, // we know it's MountedComponentVNode but flow doesn't
-  parent, // activeInstance in lifecycle state
-  parentElm,
-  refElm
+  parent // activeInstance in lifecycle state
 ) {
   var options = {
     _isComponent: true,
-    parent: parent,
     _parentVnode: vnode,
-    _parentElm: parentElm || null,
-    _refElm: refElm || null
+    parent: parent
   };
   // check inline-template render functions
   var inlineTemplate = vnode.data.inlineTemplate;
@@ -4291,23 +4317,26 @@ function createComponentInstanceForVnode (
   return new vnode.componentOptions.Ctor(options)
 }
 
-function mergeHooks (data) {
-  if (!data.hook) {
-    data.hook = {};
-  }
+function installComponentHooks (data) {
+  var hooks = data.hook || (data.hook = {});
   for (var i = 0; i < hooksToMerge.length; i++) {
     var key = hooksToMerge[i];
-    var fromParent = data.hook[key];
-    var ours = componentVNodeHooks[key];
-    data.hook[key] = fromParent ? mergeHook$1(ours, fromParent) : ours;
+    var existing = hooks[key];
+    var toMerge = componentVNodeHooks[key];
+    if (existing !== toMerge && !(existing && existing._merged)) {
+      hooks[key] = existing ? mergeHook$1(toMerge, existing) : toMerge;
+    }
   }
 }
 
-function mergeHook$1 (one, two) {
-  return function (a, b, c, d) {
-    one(a, b, c, d);
-    two(a, b, c, d);
-  }
+function mergeHook$1 (f1, f2) {
+  var merged = function (a, b) {
+    // flow complains about extra args which is why we use any
+    f1(a, b);
+    f2(a, b);
+  };
+  merged._merged = true;
+  return merged
 }
 
 // transform component v-model info (value and callback) into
@@ -4640,8 +4669,6 @@ function initInternalComponent (vm, options) {
   var parentVnode = options._parentVnode;
   opts.parent = options.parent;
   opts._parentVnode = parentVnode;
-  opts._parentElm = options._parentElm;
-  opts._refElm = options._refElm;
 
   var vnodeComponentOptions = parentVnode.componentOptions;
   opts.propsData = vnodeComponentOptions.propsData;
@@ -4954,13 +4981,15 @@ var KeepAlive = {
     }
   },
 
-  watch: {
-    include: function include (val) {
-      pruneCache(this, function (name) { return matches(val, name); });
-    },
-    exclude: function exclude (val) {
-      pruneCache(this, function (name) { return !matches(val, name); });
-    }
+  mounted: function mounted () {
+    var this$1 = this;
+
+    this.$watch('include', function (val) {
+      pruneCache(this$1, function (name) { return matches(val, name); });
+    });
+    this.$watch('exclude', function (val) {
+      pruneCache(this$1, function (name) { return !matches(val, name); });
+    });
   },
 
   render: function render () {
@@ -5078,7 +5107,7 @@ Object.defineProperty(Vue, 'FunctionalRenderContext', {
   value: FunctionalRenderContext
 });
 
-Vue.version = '2.5.15';
+Vue.version = '2.5.17-beta.0';
 
 /*  */
 
@@ -5595,7 +5624,7 @@ function createPatchFunction (backend) {
     if (isDef(i)) {
       var isReactivated = isDef(vnode.componentInstance) && i.keepAlive;
       if (isDef(i = i.hook) && isDef(i = i.init)) {
-        i(vnode, false /* hydrating */, parentElm, refElm);
+        i(vnode, false /* hydrating */);
       }
       // after calling the init hook, if the vnode is a child component
       // it should've created a child instance and mounted it. the child
@@ -5603,6 +5632,7 @@ function createPatchFunction (backend) {
       // in that case we can just return the element and be done.
       if (isDef(vnode.componentInstance)) {
         initComponent(vnode, insertedVnodeQueue);
+        insert(parentElm, vnode.elm, refElm);
         if (isTrue(isReactivated)) {
           reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm);
         }
@@ -6066,7 +6096,7 @@ function createPatchFunction (backend) {
     }
   }
 
-  return function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
+  return function patch (oldVnode, vnode, hydrating, removeOnly) {
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) { invokeDestroyHook(oldVnode); }
       return
@@ -6078,7 +6108,7 @@ function createPatchFunction (backend) {
     if (isUndef(oldVnode)) {
       // empty mount (likely as component), create new root element
       isInitialPatch = true;
-      createElm(vnode, insertedVnodeQueue, parentElm, refElm);
+      createElm(vnode, insertedVnodeQueue);
     } else {
       var isRealElement = isDef(oldVnode.nodeType);
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
@@ -6114,7 +6144,7 @@ function createPatchFunction (backend) {
 
         // replacing existing element
         var oldElm = oldVnode.elm;
-        var parentElm$1 = nodeOps.parentNode(oldElm);
+        var parentElm = nodeOps.parentNode(oldElm);
 
         // create new node
         createElm(
@@ -6123,7 +6153,7 @@ function createPatchFunction (backend) {
           // extremely rare edge case: do not insert if old element is in a
           // leaving transition. Only happens when combining transition +
           // keep-alive + HOCs. (#4590)
-          oldElm._leaveCb ? null : parentElm$1,
+          oldElm._leaveCb ? null : parentElm,
           nodeOps.nextSibling(oldElm)
         );
 
@@ -6158,8 +6188,8 @@ function createPatchFunction (backend) {
         }
 
         // destroy old node
-        if (isDef(parentElm$1)) {
-          removeVnodes(parentElm$1, [oldVnode], 0, 0);
+        if (isDef(parentElm)) {
+          removeVnodes(parentElm, [oldVnode], 0, 0);
         } else if (isDef(oldVnode.tag)) {
           invokeDestroyHook(oldVnode);
         }
@@ -7813,6 +7843,23 @@ delete props.mode;
 var TransitionGroup = {
   props: props,
 
+  beforeMount: function beforeMount () {
+    var this$1 = this;
+
+    var update = this._update;
+    this._update = function (vnode, hydrating) {
+      // force removing pass
+      this$1.__patch__(
+        this$1._vnode,
+        this$1.kept,
+        false, // hydrating
+        true // removeOnly (!important, avoids unnecessary moves)
+      );
+      this$1._vnode = this$1.kept;
+      update.call(this$1, vnode, hydrating);
+    };
+  },
+
   render: function render (h) {
     var tag = this.tag || this.$vnode.data.tag || 'span';
     var map = Object.create(null);
@@ -7854,17 +7901,6 @@ var TransitionGroup = {
     }
 
     return h(tag, null, children)
-  },
-
-  beforeUpdate: function beforeUpdate () {
-    // force removing pass
-    this.__patch__(
-      this._vnode,
-      this.kept,
-      false, // hydrating
-      true // removeOnly (!important, avoids unnecessary moves)
-    );
-    this._vnode = this.kept;
   },
 
   updated: function updated () {
