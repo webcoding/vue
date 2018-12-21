@@ -367,7 +367,7 @@ function genScopedSlot (
   const fn = `function(${String(el.slotScope)}){` +
     `return ${el.tag === 'template'
       ? el.if
-        ? `${el.if}?${genChildren(el, state) || 'undefined'}:undefined`
+        ? `(${el.if})?${genChildren(el, state) || 'undefined'}:undefined`
         : genChildren(el, state) || 'undefined'
       : genElement(el, state)
     }}`
@@ -406,9 +406,9 @@ export function genChildren (
       el.tag !== 'template' &&
       el.tag !== 'slot'
     ) {
-      // because el may be a functional component and return an Array instead of a single root.
-      // In this case, just a simple normalization is needed
-      const normalizationType = state.maybeComponent(el) ? `,1` : ``
+      const normalizationType = checkSkip
+        ? state.maybeComponent(el) ? `,1` : `,0`
+        : ``
       return `${(altGenElement || genElement)(el, state)}${normalizationType}`
     }
     const normalizationType = checkSkip

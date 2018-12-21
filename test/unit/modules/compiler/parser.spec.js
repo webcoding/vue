@@ -242,6 +242,17 @@ describe('parser', () => {
     expect('<template> cannot be keyed').toHaveBeenWarned()
   })
 
+  it('warn the child of the <transition-group> component has sequential index', () => {
+    parse(`
+      <div>
+        <transition-group>
+          <i v-for="(o, i) of arr" :key="i"></i>
+        </transition-group>
+      </div>
+    `, baseOptions)
+    expect('Do not use v-for index as key on <transition-group> children').toHaveBeenWarned()
+  })
+
   it('v-pre directive', () => {
     const ast = parse('<div v-pre id="message1"><p>{{msg}}</p></div>', baseOptions)
     expect(ast.pre).toBe(true)
@@ -654,6 +665,15 @@ describe('parser', () => {
     const pre2 = ast.children[2]
     expect(pre2.children[0].type).toBe(3)
     expect(pre2.children[0].text).toBe('\nabc')
+  })
+
+  it('keep first newline after unary tag in <pre>', () => {
+    const options = extend({}, baseOptions)
+    const ast = parse('<pre>abc<input>\ndef</pre>', options)
+    expect(ast.children[1].type).toBe(1)
+    expect(ast.children[1].tag).toBe('input')
+    expect(ast.children[2].type).toBe(3)
+    expect(ast.children[2].text).toBe('\ndef')
   })
 
   it('forgivingly handle < in plain text', () => {
