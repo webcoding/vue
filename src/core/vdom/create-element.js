@@ -124,7 +124,7 @@ export function _createElement (
         undefined, undefined, context
       )
       // 如果不是保留标签，那么我们将尝试从vm的components上查找是否有这个标签的定义
-    } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+    } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
       // 如果找到了这个标签的定义，就以此创建虚拟组件节点
       // component
       vnode = createComponent(Ctor, data, context, children, tag)
